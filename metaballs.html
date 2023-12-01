@@ -68,32 +68,30 @@
 
         // <---------------------- Time ---------------------->
         var promtForTime = false,
-            useEndDate = false, // Enable to count down to specific date
-            // You will want to lower your font size for this
-            endDateYear = 2024, //only works with useEndDate = true
-            endDateMonth = 0, //only works with useEndDate = true
-            endDateDay = 1, //only works with useEndDate = true
+            useEndDate = false, 
+            endDateYear = 2024, 
+            endDateMonth = 0,
+            endDateDay = 1,
             endDateHour = 0,
             endDateMin = 0,
-            mins = 10, //Normal Countdown Timer
+            mins = 10, 
             secs = 0;
 
         // <---------------------- Customization ---------------------->
-        var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
-            particlesPer = 150, //decrese this for performance
+        var fontSize = (ww / 5),
+            particlesPer = 150,
             colors = ["#F5FFC6", "#B4E1FF", "#AB87FF", "#FFACE4", "#C1FF9B",],
             endText = "Times up",
-            font = ["Montserrat",]; // you can put in multiple fonts
-        // ex : font = ["Trebuchet MS", "Impact"];
+            font = ["Montserrat",]; 
 
         // <---------------------- Physics ---------------------->
         var mouseIncrement = 70,
-            orbitRadius = 400, //Radius of the circe of particles around the time
-            particleRadiusMax = 4, // Max radius of each particle
-            particleRadiusMin = 3, // Min radius of each particle
-            frictionMax = 0.90, // Turn these down if your particles arent forming
-            frictionMin = 0.60, // Turn them up if paticles arent getting to their destinations
-            accelFactor = 1 / 20; //Turn up if particles are to slow
+            orbitRadius = 400, 
+            particleRadiusMax = 4, 
+            particleRadiusMin = 3,
+            frictionMax = 0.90, 
+            frictionMin = 0.60,
+            accelFactor = 1 / 20;
 
 
         function Particle(x, y) {

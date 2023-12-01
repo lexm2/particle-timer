@@ -1,3 +1,5 @@
+# Particle Timer
+the readme got cutoff, check the file for the full descriptions
 ## To open the timer simply download the HTML file in this repo and go to its file location and open it with your browser
 
 ## To edit scroll down to the start of the script tag and change the values under the sections
