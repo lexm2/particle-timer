@@ -60,6 +60,7 @@
             amount = 0,
             mouse = { x: 0, y: 0 },
             totalExcess = 0,
+            mouseRadius = 1,
             centerX = ww / 2,
             centerY = wh / 2;
         var timeTxt;
@@ -72,19 +73,21 @@
             endDateYear = 2024, //only works with useEndDate = true
             endDateMonth = 0, //only works with useEndDate = true
             endDateDay = 1, //only works with useEndDate = true
-            mins = 1, //Normal Countdown Timer
+            endDateHour = 0,
+            endDateMin = 0,
+            mins = 10, //Normal Countdown Timer
             secs = 0;
 
         // <---------------------- Customization ---------------------->
         var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
             particlesPer = 150, //decrese this for performance
-            colors = ["#F5FFC6", "#B4E1FF", "#AB87FF", "#FFACE4", "#C1FF9B"],
+            colors = ["#F5FFC6", "#B4E1FF", "#AB87FF", "#FFACE4", "#C1FF9B",],
             endText = "Times up",
             font = ["Montserrat",]; // you can put in multiple fonts
         // ex : font = ["Trebuchet MS", "Impact"];
 
         // <---------------------- Physics ---------------------->
-        var mouseRadius = 1,
+        var mouseIncrement = 70,
             orbitRadius = 400, //Radius of the circe of particles around the time
             particleRadiusMax = 4, // Max radius of each particle
             particleRadiusMin = 3, // Min radius of each particle
@@ -107,7 +110,9 @@
             this.accY = 0;
             this.friction = Math.random() * (frictionMax - frictionMin) + frictionMin; //0.91 - 0.99
             this.excessIndex = -1;
-            this.color = colors[Math.floor(Math.random() * 6)];
+            if (colors.length == 1) this.color = colors[0];
+            else
+                this.color = colors[Math.floor(Math.random() * colors.length + 1)];
 
             this.leave = function () {
                 if (this.excessIndex != -1) {
@@ -162,7 +167,7 @@
             var b = this.y - mouse.y;
 
             var mouseDistance = Math.sqrt(a * a + b * b);
-            if (mouseDistance < (mouseRadius * 70)) {
+            if (mouseDistance < (mouseRadius * mouseIncrement)) {
                 this.accX = (this.x - mouse.x) / 10;
                 this.accY = (this.y - mouse.y) / 10;
                 this.vx += this.accX;
@@ -255,7 +260,7 @@
                 excess++;
                 n++;
             }
-            
+
             amount = particles.length;
         }
 
@@ -302,7 +307,7 @@
                 endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
             }
             else {
-                endTime = new Date(endDateYear, endDateMonth, endDateDay);
+                endTime = new Date(endDateYear, endDateMonth, endDateDay, endDateHour, endDateMin);
             }
 
             updateTimer();
