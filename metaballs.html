@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-size: 0;
+        }
+
+        canvas {
+            background: black;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        input {
+            width: 250px;
+            height: 40px;
+            line-height: 40px;
+            position: absolute;
+            bottom: 35px;
+            left: calc(50% - 125px);
+            background: none;
+            color: white;
+            font-size: 30px;
+            font-family: arial;
+            text-align: center;
+            border: 1px solid white;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        p {
+            position: fixed;
+            left: 0;
+            bottom: 5px;
+            color: #fff;
+            z-index: 10;
+            font-size: 16px;
+            font-family: Helvetica, Verdana, sans-serif;
+            opacity: 0.5;
+            width: 100%;
+            text-align: center;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="scene"></canvas>
+    <script>
+
+        var canvas = document.querySelector("#scene"),
+            ctx = canvas.getContext("2d"),
+            ww = canvas.width = window.innerWidth,
+            wh = canvas.height = window.innerHeight,
+            particles = [],
+            amount = 0,
+            mouse = { x: 0, y: 0 },
+            totalExcess = 0,
+            centerX = ww / 2,
+            centerY = wh / 2;
+        var timeTxt;
+
+
+        // <---------------------- Time ---------------------->
+        var promtForTime = false,
+            useEndDate = false, // Enable to count down to specific date
+            // You will want to lower your font size for this
+            endDateYear = 2024, //only works with useEndDate = true
+            endDateMonth = 0, //only works with useEndDate = true
+            endDateDay = 1, //only works with useEndDate = true
+            mins = 1, //Normal Countdown Timer
+            secs = 0;
+
+        // <---------------------- Customization ---------------------->
+        var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
+            particlesPer = 150, //decrese this for performance
+            colors = ["#F5FFC6", "#B4E1FF", "#AB87FF", "#FFACE4", "#C1FF9B"],
+            endText = "Times up",
+            font = ["Montserrat",]; // you can put in multiple fonts
+        // ex : font = ["Trebuchet MS", "Impact"];
+
+        // <---------------------- Physics ---------------------->
+        var mouseRadius = 1,
+            orbitRadius = 400, //Radius of the circe of particles around the time
+            particleRadiusMax = 4, // Max radius of each particle
+            particleRadiusMin = 3, // Min radius of each particle
+            frictionMax = 0.90, // Turn these down if your particles arent forming
+            frictionMin = 0.60, // Turn them up if paticles arent getting to their destinations
+            accelFactor = 1 / 20; //Turn up if particles are to slow
+
+
+        function Particle(x, y) {
+            this.x = (Math.random() - 0.5) * ww + ww / 2
+            this.y = (Math.random() - 0.5) * wh + wh / 2
+            this.dest = {
+                x: x,
+                y: y
+            };
+            this.r = Math.random() * (particleRadiusMax - particleRadiusMin) + particleRadiusMin;
+            this.vx = (Math.random() - 5.5) * 15;
+            this.vy = (Math.random() - 5.5) * 15;
+            this.accX = 0;
+            this.accY = 0;
+            this.friction = Math.random() * (frictionMax - frictionMin) + frictionMin; //0.91 - 0.99
+            this.excessIndex = -1;
+            this.color = colors[Math.floor(Math.random() * 6)];
+
+            this.leave = function () {
+                if (this.excessIndex != -1) {
+                    let angle = ((2 * Math.PI) / totalExcess) * this.excessIndex;
+                    this.dest.x = centerX + orbitRadius * Math.cos(angle);
+                    this.dest.y = centerY + orbitRadius * Math.sin(angle);
+                    console.log(this.excessIndex + " " + totalExcess)
+                }
+                else {
+                    alert(this.excessIndex);
+                }
+
+            };
+
+            this.setpoint = function (x, y) {
+                this.dest.x = x;
+                this.dest.y = y;
+            };
+
+            this.distanceFrom = function (x, y) {
+                return Math.sqrt(((x - this.x) ** 2) + ((y - this.y) ** 2));
+            }
+
+            this.speed = function () {
+                return Math.sqrt(((this.vx) ** 2) + ((this.vy) ** 2));
+            }
+        }
+
+        //Particle render
+
+        Particle.prototype.render = function () {
+            let dx = (this.dest.x - this.x);
+            let dy = (this.dest.y - this.y);
+
+            this.accX = dx * accelFactor; //1000 per second
+            this.accY = dy * accelFactor;
+            this.vx += this.accX;
+            this.vy += this.accY;
+
+            this.vx *= this.friction;
+            this.vy *= this.friction;
+
+            this.x += this.vx;
+            this.y += this.vy;
+
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, Math.PI * 2, false);
+            ctx.fill();
+
+            var a = this.x - mouse.x;
+            var b = this.y - mouse.y;
+
+            var mouseDistance = Math.sqrt(a * a + b * b);
+            if (mouseDistance < (mouseRadius * 70)) {
+                this.accX = (this.x - mouse.x) / 10;
+                this.accY = (this.y - mouse.y) / 10;
+                this.vx += this.accX;
+                this.vy += this.accY;
+            }
+        }
+
+        function onMouseMove(e) {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        }
+
+        function onTouchMove(e) {
+            if (e.touches.length > 0) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        }
+
+        function onTouchEnd(e) {
+            mouse.x = -9999;
+            mouse.y = -9999;
+        }
+
+        function initScene() {
+
+            ww = canvas.width = window.innerWidth;
+            wh = canvas.height = window.innerHeight;
+            centerX = ww / 2;
+            centerY = wh / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.font = "bold " + fontSize + "px " + getFont();
+            ctx.textAlign = "center";
+            // <--------------------- Text Value ---------------------> //
+            textSize = ctx.measureText(timeTxt).height;
+            ctx.fillText(timeTxt, ww / 2, (wh / 2) - textSize);
+
+            var data = ctx.getImageData(0, 0, ww, wh).data;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = "screen";
+
+            particles = [];
+            for (var i = 0; i < ww; i += Math.round(ww / particlesPer)) {
+                for (var j = 0; j < wh; j += Math.round(ww / particlesPer)) {
+                    if (data[((i + j * ww) * 4) + 3] > particlesPer) {
+                        particles.push(new Particle(i, j));
+                    }
+                }
+            }
+            amount = particles.length;
+
+        }
+
+        function onMouseClick() {
+            mouseRadius++;
+            if (mouseRadius === 5) {
+                mouseRadius = 0;
+            }
+        }
+
+        function updateText() {
+            let n = 0;
+            let excess = 0;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = "bold " + fontSize + "px " + getFont();
+            ctx.fillText(timeTxt, ww / 2, wh / 2 + (wh / 10));
+            var data = ctx.getImageData(0, 0, ww, wh).data;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i = 0; i < ww; i += Math.round(ww / particlesPer)) {
+                for (var j = 0; j < wh; j += Math.round(ww / particlesPer)) {
+                    if (data[((i + j * ww) * 4) + 3] > particlesPer) {
+                        if (n < amount) {
+                            particles[n].setpoint(i, j);
+                            particles[n].excessIndex = -1;
+                        }
+                        else {
+                            particles.push(new Particle(i, j));
+                        }
+                        n++;
+                    }
+                }
+            }
+            totalExcess = particles.length - n;
+            while (n < amount) {
+                particles[n].excessIndex = excess;
+                particles[n].leave();
+                console.log(excess)
+                excess++;
+                n++;
+            }
+            
+            amount = particles.length;
+        }
+
+        function render(a) {
+            requestAnimationFrame(render);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i = 0; i < amount; i++) {
+                particles[i].render();
+            }
+        };
+
+        function countdown(minutes, seconds) {
+            var element, endTime, days, hours, mins, msLeft, time;
+
+            function twoDigits(n) {
+                return (n <= 9 ? "0" + n : n);
+            }
+
+            function updateTimer() {
+                msLeft = endTime - (+new Date);
+                if (msLeft < 1000) {
+                    timeTxt = endText;
+                } else {
+                    time = new Date(msLeft);
+                    hours = time.getUTCHours();
+                    mins = time.getUTCMinutes();
+                    if (!useEndDate) { timeTxt = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds()); }
+                    else {
+                        let days = Math.floor(time / (1000 * 60 * 60 * 24));
+                        let hours = Math.floor((time % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        let mins = Math.floor((time % (1000 * 60 * 60)) / (1000 * 60));
+                        let secs = Math.floor((time % (1000 * 60)) / 1000);
+
+                        timeTxt = (days ? days + 'd ' : '') +
+                            (hours ? hours + 'h ' : '') +
+                            (mins ? mins + 'm ' : '') +
+                            (twoDigits(secs) + 's');
+                    }
+                    setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
+                }
+                updateText()
+            }
+            if (!useEndDate) {
+                endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+            }
+            else {
+                endTime = new Date(endDateYear, endDateMonth, endDateDay);
+            }
+
+            updateTimer();
+        }
+
+        function getFont() {
+            return font[(Math.floor(Math.random() * font.length))]
+        }
+
+        window.addEventListener("resize", initScene);
+        window.addEventListener("mousemove", onMouseMove);
+        window.addEventListener("touchmove", onTouchMove);
+        window.addEventListener("click", onMouseClick);
+        window.addEventListener("touchend", onTouchEnd);
+        if (promtForTime) {
+            mins = prompt("Time in mins:");
+        }
+        countdown(mins, secs);
+        initScene();
+        requestAnimationFrame(render);
+    </script>
+</body>
+
+</html>
