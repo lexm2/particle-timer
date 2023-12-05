@@ -418,29 +418,30 @@
                         </div>
                         <div class="form-item"><label class="form-item__label">Timer</label>
                             <div class="form-item__control">
-                                <input class="control control--input" type="time">
+                                <input class="control control--input" type="number" id="countdownTime">
                             </div>
                         </div>
                         <h3>Customization</h3>
                         <div class="form-item"><label class="form-item__label">Text size</label>
                             <div class="form-item__control">
                                 <div class="radio">
-                                    <div class="radio__item"><span class="u-text--xsmall">A</span></div>
-                                    <div class="radio__item"><span class="u-text--small">A</span></div>
-                                    <div class="radio__item is-active"><span class="u-text--normal">A</span></div>
-                                    <div class="radio__item"><span class="u-text--large">A</span></div>
-                                    <div class="radio__item"><span class="u-text--xl">A</span></div>
+                                    <div class="radio__item" size="9"><span class="u-text--xsmall">A</span></div>
+                                    <div class="radio__item" size="7"><span class="u-text--small">A</span></div>
+                                    <div class="radio__item is-active" size="5"><span class="u-text--normal">A</span>
+                                    </div>
+                                    <div class="radio__item" size="4"><span class="u-text--large">A</span></div>
+                                    <div class="radio__item" size="3"><span class="u-text--xl">A</span></div>
                                 </div>
                             </div>
                         </div>
                         <div class="form-item"><label class="form-item__label">Particles</label>
                             <div class="form-item__control">
-                                <input class="control control--input" type="number">
+                                <input class="control control--input" type="number" id="particleCount">
                             </div>
                         </div>
                         <div class="form-item"><label class="form-item__label">Add color</label>
                             <div class="form-item__control">
-                                <input class="control control--input" type="color">
+                                <input class="control control--input" type="color" id="colorPicker">
                             </div>
                         </div>
                         <div class="form-item"><label class="form-item__label">Text information</label>
@@ -505,7 +506,8 @@
             mouseRadius = 1,
             centerX = ww / 2,
             centerY = wh / 2,
-            timerPaused = false;
+            timerPaused = false,
+            previousColor = "";
         var timeTxt;
         var element, endTime, days, hours, mins, msLeft, time;
 
@@ -540,8 +542,24 @@
         //Menu
 
         const countdownDate = document.getElementById('countdownDate');
+        const countdownTime = document.getElementById('countdownTime');
+        const particleCount = document.getElementById('particleCount');
         const olElement = document.getElementById('colorList');
         const toggle = document.querySelectorAll('.toggle');
+
+        const colorPicker = document.getElementById('colorPicker');
+
+        colorPicker.addEventListener('input', function () {
+            var currentColor = colorPicker.value;
+            console.log(currentColor)
+            if (currentColor !== previousColor) {
+                colors.push(currentColor)
+                console.log()
+                previousColor = currentColor;
+            }
+            
+        });
+
 
         for (var i = 0; toggle.length > i; i++) {
             if (i === 0) {
@@ -561,13 +579,16 @@
 
         const radioItem = document.querySelectorAll('.radio__item');
 
-        for (var i = 0; radioItem.length > i; i++) {
+        for (let i = 0; radioItem.length > i; i++) {
             radioItem[i].addEventListener('click', function () {
                 const siblingItems = this.parentNode.getElementsByClassName('radio__item');
+
                 for (var i = 0; siblingItems.length > i; i++) {
                     siblingItems[i].classList.remove('is-active');
                 }
                 this.classList.toggle('is-active');
+                console.log(this);
+                fontSize = (ww / Number(this.getAttribute('size')));
             });
         }
 
@@ -590,11 +611,37 @@
         closeSave.addEventListener('click', saveAndClose)
 
         function saveAndClose() {
-
-
-
-            countdown(0, 0);
+            particlesPer = particleCount.value;
+            populateList();
+            countdown(countdownTime.value, 0);
             menuToggle();
+        }
+
+        function populateList() {
+            olElement.innerHTML = '';
+            // Iterate through the hexValues array
+            for (var i = 0; i < colors.length; i++) {
+                var liElement = document.createElement('li'); // Create a new list item
+
+                var divElement = document.createElement('div'); // Create a new div
+                divElement.classList.add('color-display'); // Add the 'color-display' class
+                divElement.style.backgroundColor = colors[i]; // Set the background color
+
+                liElement.appendChild(divElement); // Append the div to the list item
+                olElement.appendChild(liElement); // Append the list item to the ordered list
+            }
+        }
+
+        function removeColorAndElement(liElement) {
+            var divElement = liElement.querySelector('.color-display');
+            var colorToRemove = divElement.style.backgroundColor;
+
+            var indexToRemove = colors.indexOf(colorToRemove);
+            if (indexToRemove !== -1) {
+                colors.splice(indexToRemove, 1);
+            }
+
+            olElement.removeChild(liElement);
         }
 
 
@@ -805,8 +852,7 @@
         }
 
         function formatDuration(dateObject) {
-            var totalSeconds = Math.floor((Date.now() - dateObject.getTime()) / 1000);
-
+            var totalSeconds = Math.floor((dateObject.getTime() - Date.now()) / 1000);
             var days = Math.floor(totalSeconds / (60 * 60 * 24));
             var hours = Math.floor((totalSeconds % (60 * 60 * 24)) / (60 * 60));
             var minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
@@ -814,8 +860,8 @@
 
             var result = '';
             if (days > 0) result += days + 'd ';
-            if (hours > 0) result += hours + 'h ';
-            if (minutes > 0) result += minutes + 'm ';
+            if (hours > 0) result += twoDigits(hours) + 'h ';
+            if (minutes > 0) result += twoDigits(minutes) + 'm ';
             result += seconds + 's';
 
             return result.trim();
@@ -857,6 +903,7 @@
         canvas.addEventListener("contextmenu", menuToggle);
         countdown(mins, secs);
         initScene();
+        populateList();
         requestAnimationFrame(render);
     </script>
 </body>
