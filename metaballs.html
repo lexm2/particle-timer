@@ -4,10 +4,28 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+        html {
+            box-sizing: border-box;
+            font-size: 62.5%;
+        }
+
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+        }
+
         body {
             margin: 0;
-            overflow: hidden;
-            font-size: 0;
+            font-size: 1.6rem;
+            font-family: 'Heebo', system-ui;
+            text-shadow: 0px 1px 1px #7059e2;
         }
 
         canvas {
@@ -16,39 +34,463 @@
             height: 100vh;
         }
 
-        input {
-            width: 250px;
-            height: 40px;
-            line-height: 40px;
-            position: absolute;
-            bottom: 35px;
-            left: calc(50% - 125px);
-            background: none;
-            color: white;
-            font-size: 30px;
-            font-family: arial;
-            text-align: center;
-            border: 1px solid white;
-            background: rgba(255, 255, 255, 0.2);
+        a {
+            color: inherit;
+        }
+
+        button,
+        input,
+        select,
+        textarea {
+            font-family: inherit;
+        }
+
+        button:focus,
+        input:focus,
+        select:focus,
+        textarea:focus,
+        button:active,
+        input:active,
+        select:active,
+        textarea:active {
+            outline: 0;
+        }
+
+        h1 {
+            margin: 0;
+        }
+
+        h3 {
+            margin: 4rem 0 3rem;
         }
 
         p {
-            position: fixed;
-            left: 0;
-            bottom: 5px;
-            color: #fff;
-            z-index: 10;
-            font-size: 16px;
-            font-family: Helvetica, Verdana, sans-serif;
-            opacity: 0.5;
+            margin-bottom: 2rem;
+        }
+
+        .wrapper {
+            margin: 4.5rem 1rem 0;
+            position: absolute;
+            z-index: 100;
+        }
+
+        #settingsModal {
+            display: none;
             width: 100%;
-            text-align: center;
-            margin: 0;
+            height: 100%;
+        }
+
+        .card {
+            display: block;
+            width: 100%;
+            margin: auto;
+            max-width: 1200px;
+            background: #9c88ff;
+            color: white;
+            border-radius: 0.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .card__header {
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card__body {
+            padding: 5rem 7rem 7rem;
+        }
+
+        @media screen and (max-width: 900px) {
+            .card__body {
+                padding: 5rem 2rem 7rem;
+            }
+        }
+
+        .toolbar__item {
+            box-shadow: inset 0px 0px 15px rgba(255, 255, 255, .5);
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 300ms ease;
+        }
+
+        .toolbar__item:not(:last-of-type) {
+            margin-right: 0.5rem;
+        }
+
+        .toolbar__item:hover,
+        .toolbar__item:focus {
+            transform: scale(1.1);
+            box-shadow: inset 0px 0px 3px rgba(255, 255, 255, .1);
+            transition: all 300ms ease;
+        }
+
+        .toolbar__item--close {
+            background: #ea6759;
+        }
+
+        .toolbar__item--min {
+            background: #fc0;
+        }
+
+        .toolbar__item--max {
+            background: #2dcc72;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            flex-wrap: wrap;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        @media screen and (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+
+        .grid {
+            flex: 1;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            position: relative;
+        }
+
+        @media screen and (max-width: 900px) {
+            .grid {
+                max-width: 100%;
+            }
+        }
+
+        .toggle {
+            max-width: 62px;
+            height: 32px;
+            background: #7059e2;
+            border-radius: 999px;
+            position: relative;
+            transition: all 300ms ease;
+            cursor: pointer;
+        }
+
+        .toggle__handle {
+            height: 24px;
+            width: 24px;
+            position: absolute;
+            top: 50%;
+            left: 4px;
+            transform: translateY(-50%);
+            background: white;
+            border-radius: 50%;
+            transition: all 300ms ease;
+        }
+
+        .toggle.is-on {
+            background: white;
+            transition: all 300ms ease;
+        }
+
+        .toggle.is-on .toggle__handle {
+            left: 34px;
+            background: #9c88ff;
+            transition: all 300ms ease;
+        }
+
+        .form-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .form-item__control {
+            width: 40%;
+            text-align: right;
+        }
+
+        .form-item__date {
+            width: 206px;
+            text-align: right;
+        }
+
+        .control {
+            position: relative;
+            background: transparent;
+            color: inherit;
+            display: block;
+            width: 100%;
+            border-radius: 0.3rem;
+            padding: 0.4rem;
+            border: 1px solid rgba(255, 255, 255, .3);
+        }
+
+        .control:hover,
+        .control:focus {
+            background: #7059e2;
+            border-color: transparent;
+        }
+
+        .radio {
+            display: inline-block;
+        }
+
+        .radio__item {
+            display: inline-block;
+            color: #7059e2;
+            cursor: pointer;
+            transition: all 300ms ease;
+        }
+
+        .radio__item:not(:last-of-type) {
+            margin-right: 1rem;
+        }
+
+        .radio__item.is-active {
+            color: white;
+            transition: all 300ms ease;
+        }
+
+        .u-text--xsmall {
+            font-size: 1rem;
+        }
+
+        .u-text--small {
+            font-size: 1.3rem;
+        }
+
+        .u-text--normal {
+            font-size: 1.6rem;
+        }
+
+        .u-text--large {
+            font-size: 1.9rem;
+        }
+
+        .u-text--xl {
+            font-size: 2.2rem;
+        }
+
+        .slider {
+            width: 100%;
+            position: relative;
+        }
+
+        .slider__positive {
+            width: 100%;
+            height: 5px;
+            background: white;
+            position: absolute;
+            top: 68%;
+            /* Wtf */
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .slider__input {
+            margin-top: 1rem;
+            display: block;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 5px;
+            background: #7059e2;
+            outline: none;
+            transition: all 300ms ease;
+        }
+
+        .slider__input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: white;
+            cursor: pointer;
+            position: relative;
+            transition: all 300ms ease;
+        }
+
+        .slider__input::-webkit-slider-thumb:focus,
+        .slider__input::-webkit-slider-thumb:active {
+            box-shadow: 0px 3px 12px rgba(0, 0, 0, .2);
+            transition: all 300ms ease;
+        }
+
+        .button {
+            border: 0;
+            background: white;
+            color: #9c88ff;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            border-radius: 0.4rem;
+            padding: 0.6rem 1.4rem;
+            font-size: 1.4rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .button:hover,
+        .button:focus {
+            background: #7059e2;
+            color: white;
+            transition: all 300ms ease;
+        }
+
+        .buttons {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            margin-top: 3rem;
+        }
+
+        .buttons .button {
+            margin-left: 1rem;
+        }
+
+        .control--ol {
+            display: grid;
+            grid-template-columns: auto auto auto auto;
+            border-color: transparent;
+            list-style-type: none;
+        }
+
+        .control--ol:hover,
+        .control--ol:focus {
+            background: #9c88ff;
+            border-color: transparent;
+        }
+
+        .color-display {
+            max-width: 40px;
+            height: 20px;
+            background: #2dcc72;
+            position: relative;
+            border-radius: 0.8rem;
+            margin: 5px 0;
+            padding: 10px;
+            border: 2px solid rgba(255, 255, 255, 0);
+        }
+
+        .color-display:hover,
+        .color-display:focus {
+            border: 2px solid rgba(255, 0, 0, .3);
         }
     </style>
 </head>
 
 <body>
+
+    <div class="wrapper" id="settingsModal">
+        <div class="card">
+            <div class="card__header">
+                <div class="toolbar">
+                    <div class="toolbar__item toolbar__item--close" id="closeNoSave"></div>
+                    <div class="toolbar__item toolbar__item--min"></div>
+                    <div class="toolbar__item toolbar__item--max"></div>
+                </div><a href="#">About</a>
+            </div>
+            <div class="card__body">
+                <div class="container">
+                    <div class="grid">
+                        <h1>Settings</h1>
+                    </div>
+                </div>
+                <div class="container">
+                    <div class="grid grid--half">
+                        <h3>Time</h3>
+                        <div class="form-item"><label class="form-item__label">Countdown</label>
+                            <div class="form-item__control toggle">
+                                <div class="toggle__handle"></div>
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Countdown Date</label>
+                            <div class="form-item__date">
+                                <input class="control control--input" type="datetime-local" id="countdownDate">
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Timer</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="time">
+                            </div>
+                        </div>
+                        <h3>Customization</h3>
+                        <div class="form-item"><label class="form-item__label">Text size</label>
+                            <div class="form-item__control">
+                                <div class="radio">
+                                    <div class="radio__item"><span class="u-text--xsmall">A</span></div>
+                                    <div class="radio__item"><span class="u-text--small">A</span></div>
+                                    <div class="radio__item is-active"><span class="u-text--normal">A</span></div>
+                                    <div class="radio__item"><span class="u-text--large">A</span></div>
+                                    <div class="radio__item"><span class="u-text--xl">A</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Particles</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="number">
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Add color</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="color">
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Text information</label>
+                            <div class="form-item__control">
+                                <ol class="control control--ol" id="colorList"> </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid--half">
+                        <h3>Performance</h3>
+                        <div class="form-item"><label class="form-item__label">Threshold level</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">500</span><span>mb</span></strong></small></div>
+                            <div class="slider"><input class="slider__input" type="range" value="500" min="0"
+                                    max="1000" />
+                                <div class="slider__positive" style="width: 50%;"></div>
+                            </div>
+                        </div>
+                        <p><small>If the available memory goes below this amount, the status bar text will turn
+                                red.</small></p>
+                        <div class="form-item"><label class="form-item__label">Auto clean</label>
+                            <div class="form-item__control toggle">
+                                <div class="toggle__handle"></div>
+                            </div>
+                        </div>
+                        <p><small>Automatically clean when available memory drops below the above threshold. Auto clean
+                                is limited to once every 3 minutes.</small></p>
+                        <div class="form-item"><label class="form-item__label">Disable auto clean cooldown</label>
+                            <div class="form-item__control toggle">
+                                <div class="toggle__handle"></div>
+                            </div>
+                        </div>
+                        <p><small>Auto clean cooldown: <strong>136 seconds</strong></small></p>
+                        <div class="form-item"><label class="form-item__label">Refresh interval</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">5</span><span>&nbsp;seconds</span></strong></small>
+                            </div>
+                            <div class="slider"><input class="slider__input" type="range" value="5" min="0" max="20" />
+                                <div class="slider__positive" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <p><small>If the available memory goes below this amount, the status bar text will turn
+                                red.</small></p>
+                        <div class="buttons"><a href="#">Extras</a><button class="button" id="closeSave">Done</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <canvas id="scene"></canvas>
     <script>
 
@@ -62,38 +504,102 @@
             totalExcess = 0,
             mouseRadius = 1,
             centerX = ww / 2,
-            centerY = wh / 2;
+            centerY = wh / 2,
+            timerPaused = false;
         var timeTxt;
-
+        var element, endTime, days, hours, mins, msLeft, time;
 
         // <---------------------- Time ---------------------->
-        var promtForTime = false,
-            useEndDate = false, 
-            endDateYear = 2024, 
-            endDateMonth = 0,
-            endDateDay = 1,
+        var useEndDate = false, // Enable to count down to specific date
+            // You will want to lower your font size for this
+            endDateYear = 2024, //only works with useEndDate = true
+            endDateMonth = 0, //only works with useEndDate = true
+            endDateDay = 1, //only works with useEndDate = true
             endDateHour = 0,
             endDateMin = 0,
-            mins = 10, 
+            mins = 10, //Normal Countdown Timer
             secs = 0;
 
         // <---------------------- Customization ---------------------->
-        var fontSize = (ww / 5),
-            particlesPer = 150,
+        var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
+            particlesPer = 150, //decrese this for performance
             colors = ["#F5FFC6", "#B4E1FF", "#AB87FF", "#FFACE4", "#C1FF9B",],
             endText = "Times up",
-            font = ["Montserrat",]; 
+            font = ["Montserrat",]; // you can put in multiple fonts
+        // ex : font = ["Trebuchet MS", "Impact"];
 
         // <---------------------- Physics ---------------------->
         var mouseIncrement = 70,
-            orbitRadius = 400, 
-            particleRadiusMax = 4, 
-            particleRadiusMin = 3,
-            frictionMax = 0.90, 
-            frictionMin = 0.60,
-            accelFactor = 1 / 20;
+            orbitRadius = 400, //Radius of the circe of particles around the time
+            particleRadiusMax = 4, // Max radius of each particle
+            particleRadiusMin = 3, // Min radius of each particle
+            frictionMax = 0.85, // Turn these down if your particles arent forming
+            frictionMin = 0.60, // Turn them up if paticles arent getting to their destinations
+            accelFactor = 1 / 20; //Turn up if particles are to slow
+
+        //Menu
+
+        const countdownDate = document.getElementById('countdownDate');
+        const olElement = document.getElementById('colorList');
+        const toggle = document.querySelectorAll('.toggle');
+
+        for (var i = 0; toggle.length > i; i++) {
+            if (i === 0) {
+                toggle[i].addEventListener('click', function () {
+                    this.classList.toggle('is-on');
+                    useEndDate = !useEndDate;
+                })
+
+            }
+            else {
+                toggle[i].addEventListener('click', function () {
+                    this.classList.toggle('is-on');
+                })
+            }
+
+        }
+
+        const radioItem = document.querySelectorAll('.radio__item');
+
+        for (var i = 0; radioItem.length > i; i++) {
+            radioItem[i].addEventListener('click', function () {
+                const siblingItems = this.parentNode.getElementsByClassName('radio__item');
+                for (var i = 0; siblingItems.length > i; i++) {
+                    siblingItems[i].classList.remove('is-active');
+                }
+                this.classList.toggle('is-active');
+            });
+        }
+
+        const sliderInput = document.querySelectorAll('.slider__input');
+
+        for (var i = 0; sliderInput.length > i; i++) {
+            sliderInput[i].addEventListener('input', function () {
+                const valueContainer = this.parentNode.parentNode.querySelector('.slider__value');
+                const sliderValue = this.value;
+                const maxVal = this.getAttribute('max');
+                const posWidth = this.value / maxVal;
+                this.parentNode.querySelector('.slider__positive').style.width = (posWidth * 100) + '%';
+                valueContainer.innerHTML = sliderValue;
+            });
+        }
+
+        const closeNoSave = document.getElementById('closeNoSave');
+        const closeSave = document.getElementById('closeSave');
+        closeNoSave.addEventListener('click', menuToggle)
+        closeSave.addEventListener('click', saveAndClose)
+
+        function saveAndClose() {
 
 
+
+            countdown(0, 0);
+            menuToggle();
+        }
+
+
+
+        //Timer 
         function Particle(x, y) {
             this.x = (Math.random() - 0.5) * ww + ww / 2
             this.y = (Math.random() - 0.5) * wh + wh / 2
@@ -110,14 +616,13 @@
             this.excessIndex = -1;
             if (colors.length == 1) this.color = colors[0];
             else
-                this.color = colors[Math.floor(Math.random() * colors.length + 1)];
+                this.color = colors[Math.floor(Math.random() * colors.length)];
 
             this.leave = function () {
                 if (this.excessIndex != -1) {
                     let angle = ((2 * Math.PI) / totalExcess) * this.excessIndex;
                     this.dest.x = centerX + orbitRadius * Math.cos(angle);
                     this.dest.y = centerY + orbitRadius * Math.sin(angle);
-                    console.log(this.excessIndex + " " + totalExcess)
                 }
                 else {
                     alert(this.excessIndex);
@@ -201,9 +706,7 @@
 
             ctx.font = "bold " + fontSize + "px " + getFont();
             ctx.textAlign = "center";
-            // <--------------------- Text Value ---------------------> //
-            textSize = ctx.measureText(timeTxt).height;
-            ctx.fillText(timeTxt, ww / 2, (wh / 2) - textSize);
+            ctx.fillText(timeTxt, ww / 2, (wh + fontSize / 2) / 2);
 
             var data = ctx.getImageData(0, 0, ww, wh).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -222,9 +725,11 @@
         }
 
         function onMouseClick() {
-            mouseRadius++;
-            if (mouseRadius === 5) {
-                mouseRadius = 0;
+            if (!timerPaused) {
+                mouseRadius++;
+                if (mouseRadius === 5) {
+                    mouseRadius = 0;
+                }
             }
         }
 
@@ -233,7 +738,7 @@
             let excess = 0;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.font = "bold " + fontSize + "px " + getFont();
-            ctx.fillText(timeTxt, ww / 2, wh / 2 + (wh / 10));
+            ctx.fillText(timeTxt, ww / 2, (wh + fontSize / 2) / 2);
             var data = ctx.getImageData(0, 0, ww, wh).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (var i = 0; i < ww; i += Math.round(ww / particlesPer)) {
@@ -254,7 +759,6 @@
             while (n < amount) {
                 particles[n].excessIndex = excess;
                 particles[n].leave();
-                console.log(excess)
                 excess++;
                 n++;
             }
@@ -271,13 +775,18 @@
         };
 
         function countdown(minutes, seconds) {
-            var element, endTime, days, hours, mins, msLeft, time;
-
-            function twoDigits(n) {
-                return (n <= 9 ? "0" + n : n);
+            if (!useEndDate) {
+                endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+            }
+            else {
+                endTime = new Date(countdownDate.value);
             }
 
-            function updateTimer() {
+            updateTimer();
+        }
+
+        function updateTimer() {
+            if (!timerPaused) {
                 msLeft = endTime - (+new Date);
                 if (msLeft < 1000) {
                     timeTxt = endText;
@@ -287,32 +796,57 @@
                     mins = time.getUTCMinutes();
                     if (!useEndDate) { timeTxt = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds()); }
                     else {
-                        let days = Math.floor(time / (1000 * 60 * 60 * 24));
-                        let hours = Math.floor((time % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        let mins = Math.floor((time % (1000 * 60 * 60)) / (1000 * 60));
-                        let secs = Math.floor((time % (1000 * 60)) / 1000);
-
-                        timeTxt = (days ? days + 'd ' : '') +
-                            (hours ? hours + 'h ' : '') +
-                            (mins ? mins + 'm ' : '') +
-                            (twoDigits(secs) + 's');
+                        timeTxt = formatDuration(new Date(countdownDate.value));
                     }
                     setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
                 }
-                updateText()
+                updateText();
             }
-            if (!useEndDate) {
-                endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
-            }
-            else {
-                endTime = new Date(endDateYear, endDateMonth, endDateDay, endDateHour, endDateMin);
-            }
+        }
 
-            updateTimer();
+        function formatDuration(dateObject) {
+            var totalSeconds = Math.floor((Date.now() - dateObject.getTime()) / 1000);
+
+            var days = Math.floor(totalSeconds / (60 * 60 * 24));
+            var hours = Math.floor((totalSeconds % (60 * 60 * 24)) / (60 * 60));
+            var minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+            var seconds = totalSeconds % 60;
+
+            var result = '';
+            if (days > 0) result += days + 'd ';
+            if (hours > 0) result += hours + 'h ';
+            if (minutes > 0) result += minutes + 'm ';
+            result += seconds + 's';
+
+            return result.trim();
+        }
+
+        function twoDigits(n) {
+            return (n <= 9 ? "0" + n : n);
         }
 
         function getFont() {
             return font[(Math.floor(Math.random() * font.length))]
+        }
+
+        function menuToggle(e) {
+            if (e) e.preventDefault();
+
+
+            if (!timerPaused) {
+                document.getElementById('settingsModal').style.display = 'block';
+                timerPaused = true;
+            }
+            else {
+                document.getElementById('settingsModal').style.display = 'none';
+
+                if (timerPaused) {
+                    timerPaused = false;
+                    updateTimer();
+                }
+            }
+
+            return true;
         }
 
         window.addEventListener("resize", initScene);
@@ -320,9 +854,7 @@
         window.addEventListener("touchmove", onTouchMove);
         window.addEventListener("click", onMouseClick);
         window.addEventListener("touchend", onTouchEnd);
-        if (promtForTime) {
-            mins = prompt("Time in mins:");
-        }
+        canvas.addEventListener("contextmenu", menuToggle);
         countdown(mins, secs);
         initScene();
         requestAnimationFrame(render);
