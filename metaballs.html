@@ -408,6 +408,11 @@
                 <div class="container">
                     <div class="grid grid--half">
                         <h3>Time</h3>
+                        <div class="form-item"><label class="form-item__label">Remember Time</label>
+                            <div class="form-item__control toggle">
+                                <div class="toggle__handle"></div>
+                            </div>
+                        </div>
                         <div class="form-item"><label class="form-item__label">Countdown</label>
                             <div class="form-item__control toggle">
                                 <div class="toggle__handle"></div>
@@ -425,6 +430,57 @@
                                 <input class="control control--input" type="number" id="countdownTime" value="10">
                             </div>
                         </div>
+                        <h3>Physics and Performance</h3>
+                        <h5>Warning: Modifying these values will reinitialize your scene.</h5>
+                        <div class="form-item"><label class="form-item__label">Particle Orbit Radius</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">400</span></strong></small></div>
+                            <div class="slider"><input class="slider__input" type="range" value="400" min="0" max="1000"
+                                    id="orbitRadius" />
+                                <div class="slider__positive" style="width: 50%;"></div>
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Mouse Field Radius</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">70</span></strong></small></div>
+                            <div class="slider"><input class="slider__input" type="range" value="70" min="0" max="500"
+                                    id="mouseIncrement" />
+                                <div class="slider__positive" style="width: 50%;"></div>
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Friction max</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">85</span></strong></small>
+                            </div>
+                            <div class="slider"><input class="slider__input" type="range" value="85" min="0" max="100"
+                                    id="frictionMax" />
+                                <div class="slider__positive" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Friction min</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">60</span></strong></small>
+                            </div>
+                            <div class="slider"><input class="slider__input" type="range" value="60" min="0" max="100"
+                                    id="frictionMin" />
+                                <div class="slider__positive" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Acceleration</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">20</span></strong></small>
+                            </div>
+                            <div class="slider"><input class="slider__input" type="range" value="20" min="0" max="1000"
+                                    id="accelFactor" />
+                                <div class="slider__positive" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <p><small>The acceleration is multiplied by the reciprocal of the specified value. This means
+                                larger value will have less acceleration</small></p>
+                        <div class="buttons"><a href="#">Extras</a><button class="button" id="closeSave">Done</button>
+                        </div>
+                    </div>
+                    <div class="grid grid--half">
                         <h3>Customization</h3>
                         <div class="form-item"><label class="form-item__label">Text size</label>
                             <div class="form-item__control">
@@ -452,35 +508,6 @@
                                 <input class="control control--input" type="text" id="endText" value="Times up">
                             </div>
                         </div>
-                        <div class="form-item"><label class="form-item__label">Add color</label>
-                            <div class="form-item__control">
-                                <input class="control control--input" type="color" id="colorPicker">
-                            </div>
-                        </div>
-                        <div class="form-item"><label class="form-item__label">Colors</label>
-                            <div class="form-item__control">
-                                <ol class="control control--ol" id="colorList"> </ol>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid grid--half">
-                        <h3>Physics and Performance</h3>
-                        <div class="form-item"><label class="form-item__label">Particle Orbit Radius</label>
-                            <div class="form-item__control"><small><strong><span
-                                            class="slider__value">400</span></strong></small></div>
-                            <div class="slider"><input class="slider__input" type="range" value="400" min="0" max="1000"
-                                    id="orbitRadius" />
-                                <div class="slider__positive" style="width: 50%;"></div>
-                            </div>
-                        </div>
-                        <div class="form-item"><label class="form-item__label">Mouse Field Radius</label>
-                            <div class="form-item__control"><small><strong><span
-                                            class="slider__value">70</span></strong></small></div>
-                            <div class="slider"><input class="slider__input" type="range" value="70" min="0" max="500"
-                                    id="mouseIncrement" />
-                                <div class="slider__positive" style="width: 50%;"></div>
-                            </div>
-                        </div>
                         <div class="form-item"><label class="form-item__label">Particle Radus Max</label>
                             <div class="form-item__control">
                                 <input class="control control--input" type="number" id="particleRadusMax" value="4">
@@ -491,26 +518,15 @@
                                 <input class="control control--input" type="number" id="particleRadusMin" value="3">
                             </div>
                         </div>
-                        <div class="form-item"><label class="form-item__label">Friction max</label>
-                            <div class="form-item__control"><small><strong><span
-                                            class="slider__value">85</span></strong></small>
-                            </div>
-                            <div class="slider"><input class="slider__input" type="range" value="85" min="0" max="100"
-                                    id="frictionMax" />
-                                <div class="slider__positive" style="width: 25%;"></div>
+                        <div class="form-item"><label class="form-item__label">Add color</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="color" id="colorPicker">
                             </div>
                         </div>
-                        <div class="form-item"><label class="form-item__label">Friction min</label>
-                            <div class="form-item__control"><small><strong><span
-                                            class="slider__value">60</span></strong></small>
+                        <div class="form-item"><label class="form-item__label">Colors</label>
+                            <div class="form-item__control">
+                                <ol class="control control--ol" id="colorList"> </ol>
                             </div>
-                            <div class="slider"><input class="slider__input" type="range" value="60" min="0" max="100"
-                                    id="frictionMin" />
-                                <div class="slider__positive" style="width: 25%;"></div>
-                            </div>
-                        </div>
-                        <p><small>The acceleration is multiplied by the reciprocal of the specified value.</small></p>
-                        <div class="buttons"><a href="#">Extras</a><button class="button" id="closeSave">Done</button>
                         </div>
                     </div>
                 </div>
@@ -531,6 +547,7 @@
             mouseRadius = 1,
             centerX = ww / 2,
             centerY = wh / 2,
+            keepTime = false,
             timerPaused = false,
             tog = false,
             reInit = false,
@@ -547,15 +564,15 @@
         // <---------------------- Customization ---------------------->
         var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
             particlesPer = 150, //decrese this for performance
-            colors = ["rgb(245, 255, 198)", "rgb(180, 225, 255)", "rgb(171, 135, 255)", "rgb(255, 172, 228)", "rgb(193, 255, 155)",],
+            colors = ["rgb(201, 251, 255)", "rgb(194, 252, 247)", "rgb(133, 189, 191)", "rgb(87, 115, 122)",],
             endText = "Times up",
             font = ["Montserrat",]; // you can put in multiple fonts
         // ex : font = ["Trebuchet MS", "Impact"];
 
         // <---------------------- Physics ---------------------->
         var mouseIncrement = 70,
-            orbitRadius = 400, //Radius of the circe of particles around the time
-            accelFactor = 1 / 20; //Turn up if particles are to slow
+            orbitRadius = 400; //Radius of the circe of particles around the time
+        var accelFactor;//Turn up if particles are to slow
         var particleRadiusMax; // Max radius of each particle
         var particleRadiusMin; // Min radius of each particle
         var frictionMax // Turn these down if your particles arent forming
@@ -570,7 +587,13 @@
         const orbitValue = document.getElementById('orbitRadius');
         const mouseIncrementDiv = document.getElementById('mouseIncrement')
         const endTextDiv = document.getElementById('endText');
+
         const accelFactorDiv = document.getElementById('accelFactor');
+        accelFactor = (1 / accelFactorDiv.value);
+
+        accelFactorDiv.addEventListener("change", (event) => {
+            reInit = true;
+        });
 
         const frictionMinDiv = document.getElementById('frictionMin');
         const frictionMaxDiv = document.getElementById('frictionMax');
@@ -628,19 +651,21 @@
             }
         });
 
-
+        // Switches
         for (let i = 0; toggle.length > i; i++) {
             if (i === 0) {
+                toggle[i].addEventListener('click', function () {
+                    this.classList.toggle('is-on');
+                    keepTime = !keepTime;
+                })
+            }
+            else if (i === 1) {
                 toggle[i].addEventListener('click', function () {
                     this.classList.toggle('is-on');
                     useEndDate = !useEndDate;
                 })
             }
-            else {
-                toggle[i].addEventListener('click', function () {
-                    this.classList.toggle('is-on');
-                })
-            }
+
 
         }
 
@@ -665,18 +690,12 @@
                 const valueContainer = this.parentNode.parentNode.querySelector('.slider__value');
                 const sliderValue = this.value;
                 const maxVal = this.getAttribute('max');
-                const posWidth = this.value / maxVal;
+                const minVal = this.getAttribute('min');
+                const posWidth = this.value / (maxVal - minVal);
                 this.parentNode.querySelector('.slider__positive').style.width = (posWidth * 100) + '%';
                 valueContainer.innerHTML = sliderValue;
             });
         }
-
-        const sliderPositive = document.querySelectorAll('.slider__positive');
-
-        for (let i = 0; sliderPositive.length > i; i++) {
-            
-        }
-
 
         function removeColorAndElement(liElement) {
             var divElement = liElement.firstChild;
@@ -723,6 +742,7 @@
             particleRadiusMin = particleRadiusMinDiv.value;
             frictionMax = frictionMaxDiv.value / 100;
             frictionMin = frictionMinDiv.value / 100;
+            accelFactor = (1 / accelFactorDiv.value);
             countdown(countdownTime.value, 0);
             menuToggle();
             if (reInit) initScene();
@@ -905,13 +925,14 @@
         };
 
         function countdown(minutes, seconds) {
-            if (!useEndDate) {
-                endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+            if (!keepTime) {
+                if (!useEndDate) {
+                    endTime = (+new Date) + 1000 * (60 * minutes + seconds) + 500;
+                }
+                else {
+                    endTime = new Date(countdownDate.value);
+                }
             }
-            else {
-                endTime = new Date(countdownDate.value);
-            }
-
             updateTimer();
         }
 
@@ -987,6 +1008,7 @@
         countdown(mins, secs);
         initScene();
         initColorArray();
+        sliderInput.forEach((e) => e.dispatchEvent(new CustomEvent("input", {})));
         requestAnimationFrame(render);
     </script>
 </body>
