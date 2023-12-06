@@ -32,6 +32,7 @@
             background: black;
             width: 100vw;
             height: 100vh;
+            position: fixed;
         }
 
         a {
@@ -72,12 +73,13 @@
             margin: 4.5rem 1rem 0;
             position: absolute;
             z-index: 100;
+            margin: 0;
         }
 
         #settingsModal {
             display: none;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
         }
 
         .card {
@@ -411,6 +413,8 @@
                                 <div class="toggle__handle"></div>
                             </div>
                         </div>
+                        <p><small>You should reduce the font size if enabled because the render is much larger and
+                                likley wont fit on your original screen size.</small></p>
                         <div class="form-item"><label class="form-item__label">Countdown Date</label>
                             <div class="form-item__date">
                                 <input class="control control--input" type="datetime-local" id="countdownDate">
@@ -418,7 +422,7 @@
                         </div>
                         <div class="form-item"><label class="form-item__label">Timer</label>
                             <div class="form-item__control">
-                                <input class="control control--input" type="number" id="countdownTime">
+                                <input class="control control--input" type="number" id="countdownTime" value="10">
                             </div>
                         </div>
                         <h3>Customization</h3>
@@ -434,9 +438,18 @@
                                 </div>
                             </div>
                         </div>
+                        <p><small>Larger font sizes lead to more particles on screen which could reduce perfromance.
+                                Accordingly, resizing the window is not recommended for similar reasons.
+                            </small></p>
                         <div class="form-item"><label class="form-item__label">Particles</label>
                             <div class="form-item__control">
-                                <input class="control control--input" type="number" id="particleCount">
+                                <input class="control control--input" type="number" id="particleCount" value="150">
+                            </div>
+                        </div>
+                        <p><small>Larger values could use up large amounts of memory.</small></p>
+                        <div class="form-item"><label class="form-item__label">End Text</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="text" id="endText" value="Times up">
                             </div>
                         </div>
                         <div class="form-item"><label class="form-item__label">Add color</label>
@@ -444,47 +457,59 @@
                                 <input class="control control--input" type="color" id="colorPicker">
                             </div>
                         </div>
-                        <div class="form-item"><label class="form-item__label">Text information</label>
+                        <div class="form-item"><label class="form-item__label">Colors</label>
                             <div class="form-item__control">
                                 <ol class="control control--ol" id="colorList"> </ol>
                             </div>
                         </div>
                     </div>
                     <div class="grid grid--half">
-                        <h3>Performance</h3>
-                        <div class="form-item"><label class="form-item__label">Threshold level</label>
+                        <h3>Physics and Performance</h3>
+                        <div class="form-item"><label class="form-item__label">Particle Orbit Radius</label>
                             <div class="form-item__control"><small><strong><span
-                                            class="slider__value">500</span><span>mb</span></strong></small></div>
-                            <div class="slider"><input class="slider__input" type="range" value="500" min="0"
-                                    max="1000" />
+                                            class="slider__value">400</span></strong></small></div>
+                            <div class="slider"><input class="slider__input" type="range" value="400" min="0" max="1000"
+                                    id="orbitRadius" />
                                 <div class="slider__positive" style="width: 50%;"></div>
                             </div>
                         </div>
-                        <p><small>If the available memory goes below this amount, the status bar text will turn
-                                red.</small></p>
-                        <div class="form-item"><label class="form-item__label">Auto clean</label>
-                            <div class="form-item__control toggle">
-                                <div class="toggle__handle"></div>
-                            </div>
-                        </div>
-                        <p><small>Automatically clean when available memory drops below the above threshold. Auto clean
-                                is limited to once every 3 minutes.</small></p>
-                        <div class="form-item"><label class="form-item__label">Disable auto clean cooldown</label>
-                            <div class="form-item__control toggle">
-                                <div class="toggle__handle"></div>
-                            </div>
-                        </div>
-                        <p><small>Auto clean cooldown: <strong>136 seconds</strong></small></p>
-                        <div class="form-item"><label class="form-item__label">Refresh interval</label>
+                        <div class="form-item"><label class="form-item__label">Mouse Field Radius</label>
                             <div class="form-item__control"><small><strong><span
-                                            class="slider__value">5</span><span>&nbsp;seconds</span></strong></small>
+                                            class="slider__value">70</span></strong></small></div>
+                            <div class="slider"><input class="slider__input" type="range" value="70" min="0" max="500"
+                                    id="mouseIncrement" />
+                                <div class="slider__positive" style="width: 50%;"></div>
                             </div>
-                            <div class="slider"><input class="slider__input" type="range" value="5" min="0" max="20" />
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Particle Radus Max</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="number" id="particleRadusMax" value="4">
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Particle Radus Min</label>
+                            <div class="form-item__control">
+                                <input class="control control--input" type="number" id="particleRadusMin" value="3">
+                            </div>
+                        </div>
+                        <div class="form-item"><label class="form-item__label">Friction max</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">85</span></strong></small>
+                            </div>
+                            <div class="slider"><input class="slider__input" type="range" value="85" min="0" max="100"
+                                    id="frictionMax" />
                                 <div class="slider__positive" style="width: 25%;"></div>
                             </div>
                         </div>
-                        <p><small>If the available memory goes below this amount, the status bar text will turn
-                                red.</small></p>
+                        <div class="form-item"><label class="form-item__label">Friction min</label>
+                            <div class="form-item__control"><small><strong><span
+                                            class="slider__value">60</span></strong></small>
+                            </div>
+                            <div class="slider"><input class="slider__input" type="range" value="60" min="0" max="100"
+                                    id="frictionMin" />
+                                <div class="slider__positive" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <p><small>The acceleration is multiplied by the reciprocal of the specified value.</small></p>
                         <div class="buttons"><a href="#">Extras</a><button class="button" id="closeSave">Done</button>
                         </div>
                     </div>
@@ -507,25 +532,22 @@
             centerX = ww / 2,
             centerY = wh / 2,
             timerPaused = false,
+            tog = false,
+            reInit = false,
             previousColor = "";
         var timeTxt;
-        var element, endTime, days, hours, mins, msLeft, time;
+        var endTime, msLeft, time;
 
         // <---------------------- Time ---------------------->
         var useEndDate = false, // Enable to count down to specific date
             // You will want to lower your font size for this
-            endDateYear = 2024, //only works with useEndDate = true
-            endDateMonth = 0, //only works with useEndDate = true
-            endDateDay = 1, //only works with useEndDate = true
-            endDateHour = 0,
-            endDateMin = 0,
             mins = 10, //Normal Countdown Timer
             secs = 0;
 
         // <---------------------- Customization ---------------------->
         var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
             particlesPer = 150, //decrese this for performance
-            colors = ["#F5FFC6", "#B4E1FF", "#AB87FF", "#FFACE4", "#C1FF9B",],
+            colors = ["rgb(245, 255, 198)", "rgb(180, 225, 255)", "rgb(171, 135, 255)", "rgb(255, 172, 228)", "rgb(193, 255, 155)",],
             endText = "Times up",
             font = ["Montserrat",]; // you can put in multiple fonts
         // ex : font = ["Trebuchet MS", "Impact"];
@@ -533,41 +555,86 @@
         // <---------------------- Physics ---------------------->
         var mouseIncrement = 70,
             orbitRadius = 400, //Radius of the circe of particles around the time
-            particleRadiusMax = 4, // Max radius of each particle
-            particleRadiusMin = 3, // Min radius of each particle
-            frictionMax = 0.85, // Turn these down if your particles arent forming
-            frictionMin = 0.60, // Turn them up if paticles arent getting to their destinations
             accelFactor = 1 / 20; //Turn up if particles are to slow
-
-        //Menu
+        var particleRadiusMax; // Max radius of each particle
+        var particleRadiusMin; // Min radius of each particle
+        var frictionMax // Turn these down if your particles arent forming
+        var frictionMin // Turn them up if paticles arent getting to their destinations
+        //<---------------------------------Menu--------------------------------->
 
         const countdownDate = document.getElementById('countdownDate');
         const countdownTime = document.getElementById('countdownTime');
         const particleCount = document.getElementById('particleCount');
         const olElement = document.getElementById('colorList');
         const toggle = document.querySelectorAll('.toggle');
+        const orbitValue = document.getElementById('orbitRadius');
+        const mouseIncrementDiv = document.getElementById('mouseIncrement')
+        const endTextDiv = document.getElementById('endText');
+        const accelFactorDiv = document.getElementById('accelFactor');
+
+        const frictionMinDiv = document.getElementById('frictionMin');
+        const frictionMaxDiv = document.getElementById('frictionMax');
+        frictionMax = frictionMaxDiv.value / 100;
+        frictionMin = frictionMinDiv.value / 100;
+
+        frictionMinDiv.addEventListener("change", (event) => {
+            reInit = true;
+        });
+
+        frictionMaxDiv.addEventListener("change", (event) => {
+            reInit = true;
+        });
+
+        const particleRadiusMaxDiv = document.getElementById('particleRadusMax');
+        const particleRadiusMinDiv = document.getElementById('particleRadusMin');
+
+        particleRadiusMax = particleRadiusMaxDiv.value;
+        particleRadiusMin = particleRadiusMinDiv.value;
+
+
+        particleRadiusMaxDiv.addEventListener("change", (event) => {
+            reInit = true;
+        });
+
+        particleRadiusMinDiv.addEventListener("change", (event) => {
+            reInit = true;
+        });
+
+        particleRadiusMinDiv.addEventListener('focus', function () {
+            tog = !tog;
+            let color = colorPicker.value;
+            if (tog === true) { //open
+                previousColor = color;
+            } else { //close
+                if (previousColor != color) {
+                    createColorLi(color);
+                    reInit = true;
+                }
+            }
+        });
 
         const colorPicker = document.getElementById('colorPicker');
 
-        colorPicker.addEventListener('input', function () {
-            var currentColor = colorPicker.value;
-            console.log(currentColor)
-            if (currentColor !== previousColor) {
-                colors.push(currentColor)
-                console.log()
-                previousColor = currentColor;
+        colorPicker.addEventListener('focus', function () {
+            tog = !tog;
+            let color = colorPicker.value;
+            if (tog === true) { //open
+                previousColor = color;
+            } else { //close
+                if (previousColor != color) {
+                    createColorLi(color);
+                    reInit = true;
+                }
             }
-            
         });
 
 
-        for (var i = 0; toggle.length > i; i++) {
+        for (let i = 0; toggle.length > i; i++) {
             if (i === 0) {
                 toggle[i].addEventListener('click', function () {
                     this.classList.toggle('is-on');
                     useEndDate = !useEndDate;
                 })
-
             }
             else {
                 toggle[i].addEventListener('click', function () {
@@ -583,18 +650,17 @@
             radioItem[i].addEventListener('click', function () {
                 const siblingItems = this.parentNode.getElementsByClassName('radio__item');
 
-                for (var i = 0; siblingItems.length > i; i++) {
+                for (let i = 0; siblingItems.length > i; i++) {
                     siblingItems[i].classList.remove('is-active');
                 }
                 this.classList.toggle('is-active');
-                console.log(this);
                 fontSize = (ww / Number(this.getAttribute('size')));
             });
         }
 
         const sliderInput = document.querySelectorAll('.slider__input');
 
-        for (var i = 0; sliderInput.length > i; i++) {
+        for (let i = 0; sliderInput.length > i; i++) {
             sliderInput[i].addEventListener('input', function () {
                 const valueContainer = this.parentNode.parentNode.querySelector('.slider__value');
                 const sliderValue = this.value;
@@ -605,6 +671,44 @@
             });
         }
 
+        const sliderPositive = document.querySelectorAll('.slider__positive');
+
+        for (let i = 0; sliderPositive.length > i; i++) {
+            
+        }
+
+
+        function removeColorAndElement(liElement) {
+            var divElement = liElement.firstChild;
+            var colorToRemove = divElement.style.backgroundColor;
+            var indexToRemove = colors.indexOf(colorToRemove);
+            colors.splice(indexToRemove, 1);
+
+
+            olElement.removeChild(liElement);
+            reInit = true;
+        }
+
+        function initColorArray() {
+            for (let i = 0; i < colors.length; i++) {
+                createColorLi(colors[i], false);
+            }
+        }
+
+        function createColorLi(color, push = true) {
+            if (push) {
+                colors.push(color)
+            }
+            var liElement = document.createElement('li');
+            var divElement = document.createElement('div'); // Create a new div
+            divElement.classList.add('color-display'); // Add the 'color-display' class
+            divElement.style.backgroundColor = color; // Set the background color
+            divElement.addEventListener('click', function () {
+                removeColorAndElement(this.parentNode);
+            });
+            liElement.appendChild(divElement); // Append the div to the list item
+            olElement.appendChild(liElement); // Append the list item to the ordered list
+        }
         const closeNoSave = document.getElementById('closeNoSave');
         const closeSave = document.getElementById('closeSave');
         closeNoSave.addEventListener('click', menuToggle)
@@ -612,41 +716,23 @@
 
         function saveAndClose() {
             particlesPer = particleCount.value;
-            populateList();
+            endText = endTextDiv.value;
+            orbitRadius = orbitValue.value;
+            mouseIncrement = mouseIncrementDiv.value;
+            particleRadiusMax = particleRadiusMaxDiv.value;
+            particleRadiusMin = particleRadiusMinDiv.value;
+            frictionMax = frictionMaxDiv.value / 100;
+            frictionMin = frictionMinDiv.value / 100;
             countdown(countdownTime.value, 0);
             menuToggle();
-        }
-
-        function populateList() {
-            olElement.innerHTML = '';
-            // Iterate through the hexValues array
-            for (var i = 0; i < colors.length; i++) {
-                var liElement = document.createElement('li'); // Create a new list item
-
-                var divElement = document.createElement('div'); // Create a new div
-                divElement.classList.add('color-display'); // Add the 'color-display' class
-                divElement.style.backgroundColor = colors[i]; // Set the background color
-
-                liElement.appendChild(divElement); // Append the div to the list item
-                olElement.appendChild(liElement); // Append the list item to the ordered list
-            }
-        }
-
-        function removeColorAndElement(liElement) {
-            var divElement = liElement.querySelector('.color-display');
-            var colorToRemove = divElement.style.backgroundColor;
-
-            var indexToRemove = colors.indexOf(colorToRemove);
-            if (indexToRemove !== -1) {
-                colors.splice(indexToRemove, 1);
-            }
-
-            olElement.removeChild(liElement);
+            if (reInit) initScene();
+            reInit = false;
         }
 
 
 
-        //Timer 
+        //<---------------------------------Timer--------------------------------->
+
         function Particle(x, y) {
             this.x = (Math.random() - 0.5) * ww + ww / 2
             this.y = (Math.random() - 0.5) * wh + wh / 2
@@ -654,16 +740,14 @@
                 x: x,
                 y: y
             };
-            this.r = Math.random() * (particleRadiusMax - particleRadiusMin) + particleRadiusMin;
+            this.r = (Math.random() * (particleRadiusMax - particleRadiusMin)) + Number(particleRadiusMin);
             this.vx = (Math.random() - 5.5) * 15;
             this.vy = (Math.random() - 5.5) * 15;
             this.accX = 0;
             this.accY = 0;
-            this.friction = Math.random() * (frictionMax - frictionMin) + frictionMin; //0.91 - 0.99
+            this.friction = Math.random() * (frictionMax - frictionMin) + frictionMin;
             this.excessIndex = -1;
-            if (colors.length == 1) this.color = colors[0];
-            else
-                this.color = colors[Math.floor(Math.random() * colors.length)];
+            this.color = colors[Math.floor(Math.random() * colors.length)];
 
             this.leave = function () {
                 if (this.excessIndex != -1) {
@@ -754,14 +838,13 @@
             ctx.font = "bold " + fontSize + "px " + getFont();
             ctx.textAlign = "center";
             ctx.fillText(timeTxt, ww / 2, (wh + fontSize / 2) / 2);
-
             var data = ctx.getImageData(0, 0, ww, wh).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.globalCompositeOperation = "screen";
 
             particles = [];
-            for (var i = 0; i < ww; i += Math.round(ww / particlesPer)) {
-                for (var j = 0; j < wh; j += Math.round(ww / particlesPer)) {
+            for (let i = 0; i < ww; i += Math.round(ww / particlesPer)) {
+                for (let j = 0; j < wh; j += Math.round(ww / particlesPer)) {
                     if (data[((i + j * ww) * 4) + 3] > particlesPer) {
                         particles.push(new Particle(i, j));
                     }
@@ -788,8 +871,8 @@
             ctx.fillText(timeTxt, ww / 2, (wh + fontSize / 2) / 2);
             var data = ctx.getImageData(0, 0, ww, wh).data;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (var i = 0; i < ww; i += Math.round(ww / particlesPer)) {
-                for (var j = 0; j < wh; j += Math.round(ww / particlesPer)) {
+            for (let i = 0; i < ww; i += Math.round(ww / particlesPer)) {
+                for (let j = 0; j < wh; j += Math.round(ww / particlesPer)) {
                     if (data[((i + j * ww) * 4) + 3] > particlesPer) {
                         if (n < amount) {
                             particles[n].setpoint(i, j);
@@ -816,7 +899,7 @@
         function render(a) {
             requestAnimationFrame(render);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (var i = 0; i < amount; i++) {
+            for (let i = 0; i < amount; i++) {
                 particles[i].render();
             }
         };
@@ -862,7 +945,7 @@
             if (days > 0) result += days + 'd ';
             if (hours > 0) result += twoDigits(hours) + 'h ';
             if (minutes > 0) result += twoDigits(minutes) + 'm ';
-            result += seconds + 's';
+            result += twoDigits(seconds) + 's';
 
             return result.trim();
         }
@@ -903,7 +986,7 @@
         canvas.addEventListener("contextmenu", menuToggle);
         countdown(mins, secs);
         initScene();
-        populateList();
+        initColorArray();
         requestAnimationFrame(render);
     </script>
 </body>
