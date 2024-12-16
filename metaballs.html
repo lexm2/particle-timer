@@ -579,6 +579,8 @@
         var particleRadiusMin; // Min radius of each particle
         var frictionMax // Turn these down if your particles arent forming
         var frictionMin // Turn them up if paticles arent getting to their destinations
+        let lastFrameTime = performance.now();
+        const TARGET_FRAMETIME = 1000 / 120;
         //<---------------------------------Menu--------------------------------->
 
         const countdownDate = document.getElementById('countdownDate');
@@ -813,8 +815,8 @@
             this.vx *= this.friction;
             this.vy *= this.friction;
 
-            this.x += this.vx;
-            this.y += this.vy;
+            this.x += this.vx * performanceStats.deltaTime;
+            this.y += this.vy * performanceStats.deltaTime;
 
             let a = this.x - mouse.x;
             let b = this.y - mouse.y;
@@ -957,7 +959,6 @@
                 msLeft = endTime - (+new Date);
 
                 let secondsLeft = Math.floor(msLeft / 1000);
-                console.log(secondsLeft);
 
                 if (secondsLeft <= 10 && secondsLeft >= 1) {
                     document.getElementById('tickSound').play();
@@ -1029,6 +1030,7 @@
 
         const performanceStats = {
             fps: 0,
+            deltaTime: 0,
             particleCount: 0,
             renderTime: 0,
             physicsTime: 0
@@ -1044,12 +1046,14 @@
             document.body.appendChild(stats);
 
             let lastTime = performance.now();
+            lastFrameTime = lastTime;
             let frames = 0;
 
             function update() {
                 const now = performance.now();
                 frames++;
-
+                performanceStats.deltaTime = (now - lastFrameTime) / 24;
+                lastFrameTime = now;
                 if (now >= lastTime + 1000) {
                     performanceStats.fps = frames;
                     frames = 0;
