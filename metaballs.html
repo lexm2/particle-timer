@@ -534,6 +534,8 @@
         </div>
     </div>
     <canvas id="scene"></canvas>
+    <audio id="tickSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568.wav"></audio>
+    <audio id="timerComplete" src="https://assets.mixkit.co/active_storage/sfx/2569/2569.wav"></audio>
     <script>
 
         var canvas = document.querySelector("#scene"),
@@ -565,7 +567,7 @@
         var fontSize = (ww / 5), //smaller sizes resolve quicker while larger require more friction
             particlesPer = 150, //decrese this for performance
             colors = ["rgb(201, 251, 255)", "rgb(194, 252, 247)", "rgb(133, 189, 191)", "rgb(87, 115, 122)",],
-            endText = "Times up",
+            endText = "Time's up",
             font = ["Montserrat",]; // you can put in multiple fonts
         // ex : font = ["Trebuchet MS", "Impact"];
 
@@ -798,10 +800,12 @@
         //Particle render
 
         Particle.prototype.render = function () {
+            const physicsStart = performance.now();
+
             let dx = (this.dest.x - this.x);
             let dy = (this.dest.y - this.y);
 
-            this.accX = dx * accelFactor; //1000 per second
+            this.accX = dx * accelFactor;
             this.accY = dy * accelFactor;
             this.vx += this.accX;
             this.vy += this.accY;
@@ -812,22 +816,26 @@
             this.x += this.vx;
             this.y += this.vy;
 
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.r, Math.PI * 2, false);
-            ctx.fill();
-
-            var a = this.x - mouse.x;
-            var b = this.y - mouse.y;
-
-            var mouseDistance = Math.sqrt(a * a + b * b);
+            let a = this.x - mouse.x;
+            let b = this.y - mouse.y;
+            let mouseDistance = Math.sqrt(a * a + b * b);
             if (mouseDistance < (mouseRadius * mouseIncrement)) {
                 this.accX = (this.x - mouse.x) / 10;
                 this.accY = (this.y - mouse.y) / 10;
                 this.vx += this.accX;
                 this.vy += this.accY;
             }
+
+            performanceStats.physicsTime = performance.now() - physicsStart;
+
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, Math.PI * 2, false);
+            ctx.fill();
         }
+
+
+
 
         function onMouseMove(e) {
             mouse.x = e.clientX;
@@ -917,12 +925,20 @@
         }
 
         function render(a) {
+            const renderStart = performance.now();
+            performanceStats.physicsTime = 1; // Reset physics time
+
             requestAnimationFrame(render);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             for (let i = 0; i < amount; i++) {
                 particles[i].render();
             }
-        };
+
+            performanceStats.renderTime = performance.now() - renderStart;
+            performanceStats.particleCount = amount;
+        }
+
+
 
         function countdown(minutes, seconds) {
             if (!keepTime) {
@@ -939,14 +955,24 @@
         function updateTimer() {
             if (!timerPaused) {
                 msLeft = endTime - (+new Date);
+
+                let secondsLeft = Math.floor(msLeft / 1000);
+                console.log(secondsLeft);
+
+                if (secondsLeft <= 10 && secondsLeft >= 1) {
+                    document.getElementById('tickSound').play();
+                }
+
                 if (msLeft < 1000) {
                     timeTxt = endText;
+                    document.getElementById('timerComplete').play();
                 } else {
                     time = new Date(msLeft);
                     hours = time.getUTCHours();
                     mins = time.getUTCMinutes();
-                    if (!useEndDate) { timeTxt = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds()); }
-                    else {
+                    if (!useEndDate) {
+                        timeTxt = (hours ? hours + ':' + twoDigits(mins) : mins) + ':' + twoDigits(time.getUTCSeconds());
+                    } else {
                         timeTxt = formatDuration(new Date(countdownDate.value));
                     }
                     setTimeout(updateTimer, time.getUTCMilliseconds() + 500);
@@ -999,6 +1025,53 @@
             return true;
         }
 
+        // <---------------------- Performance ----------------------->
+
+        const performanceStats = {
+            fps: 0,
+            particleCount: 0,
+            renderTime: 0,
+            physicsTime: 0
+        };
+
+        function measurePerformance() {
+            const stats = document.createElement('div');
+            stats.style.position = 'fixed';
+            stats.style.top = '10px';
+            stats.style.left = '10px';
+            stats.style.color = 'white';
+            stats.style.fontFamily = 'monospace';
+            document.body.appendChild(stats);
+
+            let lastTime = performance.now();
+            let frames = 0;
+
+            function update() {
+                const now = performance.now();
+                frames++;
+
+                if (now >= lastTime + 1000) {
+                    performanceStats.fps = frames;
+                    frames = 0;
+                    lastTime = now;
+
+                    const renderDisplay = performanceStats.renderTime < 1 ? '<1' : Math.round(performanceStats.renderTime);
+                    const physicsDisplay = performanceStats.physicsTime < 1 ? '<1' : Math.round(performanceStats.physicsTime);
+
+                    stats.textContent = `
+                FPS: ${performanceStats.fps}
+                Particles: ${performanceStats.particleCount}
+                Render: ${renderDisplay}ms
+                Physics: ${physicsDisplay}ms
+            `;
+                }
+                requestAnimationFrame(update);
+            }
+            update();
+        }
+
+
+        measurePerformance();
         window.addEventListener("resize", initScene);
         window.addEventListener("mousemove", onMouseMove);
         window.addEventListener("touchmove", onTouchMove);
