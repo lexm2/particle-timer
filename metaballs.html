@@ -397,7 +397,7 @@
                     <div class="toolbar__item toolbar__item--close" id="closeNoSave"></div>
                     <div class="toolbar__item toolbar__item--min" id="minscreenButton"></div>
                     <div class="toolbar__item toolbar__item--max" id="fullscreenButton"></div>
-                </div><a href="#">About</a>
+                </div><button class="button" id="reset">Reset</button>
             </div>
             <div class="card__body">
                 <div class="container">
@@ -461,7 +461,7 @@
                             <div class="form-item__control"><small><strong><span
                                             class="slider__value">60</span></strong></small>
                             </div>
-                            <div class="slider"><input class="slider__input" type="range" value="60" min="0" max="100"
+                            <div class="slider"><input class="slider__input" type="range" value="65" min="0" max="100"
                                     id="frictionMin" />
                                 <div class="slider__positive" style="width: 25%;"></div>
                             </div>
@@ -610,6 +610,7 @@
             endText = "Time's up",
             font = ["Montserrat",]; // you can put in multiple fonts
         // ex : font = ["Trebuchet MS", "Impact"];
+        let cancelMouseEvent = false;
 
         // <---------------------- Physics ---------------------->
         var mouseIncrement = 70,
@@ -797,6 +798,13 @@
             if (reInit) initScene();
             reInit = false;
         }
+
+        const reset = document.getElementById('reset');
+
+        reset.addEventListener('click', function () {
+            menuToggle();
+            initScene();
+        });
 
         const fullscreenButton = document.getElementById('fullscreenButton');
 
@@ -1029,11 +1037,15 @@
         }
 
         function onMouseClick() {
-            if (!timerPaused) {
+            if (!timerPaused && !cancelMouseEvent) {
+                console.log("set to 1");
                 mouseRadius++;
                 if (mouseRadius === 5) {
                     mouseRadius = 0;
                 }
+            }
+            else if (cancelMouseEvent) {
+                cancelMouseEvent = false;
             }
         }
 
@@ -1161,7 +1173,6 @@
         function menuToggle(e) {
             if (e) e.preventDefault();
 
-
             if (!timerPaused) {
                 document.getElementById('settingsModal').style.display = 'block';
                 timerPaused = true;
@@ -1173,7 +1184,9 @@
                     timerPaused = false;
                     updateTimer();
                 }
-            }
+            } 
+            
+            cancelMouseEvent = true;
 
             return true;
         }
