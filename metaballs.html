@@ -535,6 +535,47 @@
     <canvas id="scene"></canvas>
     <audio id="tickSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568.wav"></audio>
     <audio id="timerComplete" src="https://assets.mixkit.co/active_storage/sfx/2569/2569.wav"></audio>
+    <script id="worker" type="javascript/worker">
+        self.onmessage = function(e) {
+          const particle = e.data.particle;
+          const mouse = e.data.mouse;
+          const mouseRadius = e.data.mouseRadius;
+          const mouseIncrement = e.data.mouseIncrement;
+          const accelFactor = e.data.accelFactor;
+          const deltaTime = e.data.deltaTime;
+      
+          // Calculate new position
+          let dx = (particle.dest.x - particle.x);
+          let dy = (particle.dest.y - particle.y);
+      
+          particle.accX = dx * accelFactor;
+          particle.accY = dy * accelFactor;
+          particle.vx += particle.accX;
+          particle.vy += particle.accY;
+      
+          particle.vx *= particle.friction;
+          particle.vy *= particle.friction;
+      
+          particle.x += particle.vx * deltaTime;
+          particle.y += particle.vy * deltaTime;
+      
+          // Mouse interaction
+          let a = particle.x - mouse.x;
+          let b = particle.y - mouse.y;
+          let mouseDistance = Math.sqrt(a * a + b * b);
+          if (mouseDistance < (mouseRadius * mouseIncrement)) {
+              particle.accX = (particle.x - mouse.x) / 10;
+              particle.accY = (particle.y - mouse.y) / 10;
+              particle.vx += particle.accX;
+              particle.vy += particle.accY;
+          }
+      
+          self.postMessage({
+              index: e.data.index,
+              updatedParticle: particle
+          });
+        }
+      </script>
     <script>
 
         var canvas = document.querySelector("#scene"),
@@ -580,6 +621,11 @@
         var frictionMin // Turn them up if paticles arent getting to their destinations
         let lastFrameTime = performance.now();
         const TARGET_FRAMETIME = 1000 / 120;
+        // <---------------------- Threads ---------------------->
+        const NUM_WORKERS = navigator.hardwareConcurrency || 4;
+        const workers = [];
+        const particleQueue = [];
+        let processingParticles = new Set();
         //<---------------------------------Menu--------------------------------->
 
         const countdownDate = document.getElementById('countdownDate');
@@ -751,6 +797,72 @@
             if (reInit) initScene();
             reInit = false;
         }
+
+
+        // Initialize workers
+        function initializeWorkers() {
+            console.log(document.querySelector('#worker'));
+            const workerScript = document.querySelector('#worker').textContent;
+            const blob = new Blob([workerScript], { type: 'text/javascript' });
+            const workerUrl = URL.createObjectURL(blob);
+
+            for (let i = 0; i < NUM_WORKERS; i++) {
+                const worker = new Worker(workerUrl);
+                worker.onmessage = handleWorkerMessage;
+                workers.push(worker);
+            }
+        }
+
+        function handleWorkerMessage(e) {
+            const { index, updatedParticle } = e.data;
+            const p = particles[index];
+
+            // Update only the calculated properties
+            p.x = updatedParticle.x;
+            p.y = updatedParticle.y;
+            p.vx = updatedParticle.vx;
+            p.vy = updatedParticle.vy;
+            p.accX = updatedParticle.accX;
+            p.accY = updatedParticle.accY;
+
+            processingParticles.delete(index);
+
+            if (particleQueue.length > 0) {
+                const nextIndex = particleQueue.shift();
+                processParticle(nextIndex);
+            }
+        }
+
+        function processParticle(index) {
+            if (processingParticles.has(index)) return;
+
+            processingParticles.add(index);
+            const worker = workers[index % NUM_WORKERS];
+            const p = particles[index];
+
+            worker.postMessage({
+                index: index,
+                particle: {
+                    x: p.x,
+                    y: p.y,
+                    dest: p.dest,
+                    vx: p.vx,
+                    vy: p.vy,
+                    accX: p.accX,
+                    accY: p.accY,
+                    friction: p.friction,
+                    excessIndex: p.excessIndex,
+                    color: p.color,
+                    r: p.r
+                },
+                mouse: mouse,
+                mouseRadius: mouseRadius,
+                mouseIncrement: mouseIncrement,
+                accelFactor: accelFactor,
+                deltaTime: performanceStats.deltaTime
+            });
+        }
+
 
 
 
@@ -927,11 +1039,19 @@
 
         function render(a) {
             const renderStart = performance.now();
-            performanceStats.physicsTime = 1; // Reset physics time
+            performanceStats.physicsTime = 0; // Reset physics time
 
             requestAnimationFrame(render);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             for (let i = 0; i < amount; i++) {
+                if (!processingParticles.has(i)) {
+                    if (workers.length > processingParticles.size) {
+                        processParticle(i);
+                    } else {
+                        particleQueue.push(i);
+                    }
+                }
                 particles[i].render();
             }
 
@@ -1085,8 +1205,10 @@
         initScene();
         initColorArray();
         sliderInput.forEach((e) => e.dispatchEvent(new CustomEvent("input", {})));
+        initializeWorkers();
         requestAnimationFrame(render);
     </script>
+
 </body>
 
 </html>
