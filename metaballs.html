@@ -395,8 +395,8 @@
             <div class="card__header">
                 <div class="toolbar">
                     <div class="toolbar__item toolbar__item--close" id="closeNoSave"></div>
-                    <div class="toolbar__item toolbar__item--min"></div>
-                    <div class="toolbar__item toolbar__item--max"></div>
+                    <div class="toolbar__item toolbar__item--min" id="minscreenButton"></div>
+                    <div class="toolbar__item toolbar__item--max" id="fullscreenButton"></div>
                 </div><a href="#">About</a>
             </div>
             <div class="card__body">
@@ -586,7 +586,7 @@
             amount = 0,
             mouse = { x: 0, y: 0 },
             totalExcess = 0,
-            mouseRadius = 1,
+            mouseRadius = 0,
             centerX = ww / 2,
             centerY = wh / 2,
             keepTime = false,
@@ -798,10 +798,44 @@
             reInit = false;
         }
 
+        const fullscreenButton = document.getElementById('fullscreenButton');
 
-        // Initialize workers
+        fullscreenButton.addEventListener('click', () => {
+            const canvas = document.getElementById('scene');
+            console.log('Fullscreen button clicked');
+
+            if (!document.fullscreenElement) {
+                console.log('Attempting to enter fullscreen mode');
+                if (canvas.requestFullscreen) {
+                    canvas.requestFullscreen().then(() => {
+                        initScene();
+                    });
+                } else if (canvas.webkitRequestFullscreen) {
+                    canvas.webkitRequestFullscreen();
+                    initScene();
+                } else if (canvas.msRequestFullscreen) {
+                    canvas.msRequestFullscreen();
+                    initScene();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().then(() => {
+                        initScene();
+                    });
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                    initScene();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                    initScene();
+                }
+            }
+
+            menuToggle();
+        });
+
+
         function initializeWorkers() {
-            console.log(document.querySelector('#worker'));
             const workerScript = document.querySelector('#worker').textContent;
             const blob = new Blob([workerScript], { type: 'text/javascript' });
             const workerUrl = URL.createObjectURL(blob);
@@ -817,7 +851,6 @@
             const { index, updatedParticle } = e.data;
             const p = particles[index];
 
-            // Update only the calculated properties
             p.x = updatedParticle.x;
             p.y = updatedParticle.y;
             p.vx = updatedParticle.vx;
