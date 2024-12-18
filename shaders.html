@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>WebGL Particle</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="glCanvas"></canvas>
+
+    <script type="x-shader/x-vertex" id="vertex-shader">
+        attribute vec2 a_position;
+        attribute vec2 a_velocity;
+        attribute vec2 a_setPoint;
+        attribute float a_acceleration;
+        attribute float a_damping;
+        attribute vec3 a_color;
+        uniform float u_deltaTime;
+        varying vec3 v_color;
+
+        void main() {
+            vec2 position = a_position;
+            vec2 velocity = a_velocity;
+            
+            vec2 toTarget = a_setPoint - position;
+            vec2 acceleration = toTarget * a_acceleration;
+            
+            velocity = velocity * a_damping + acceleration * u_deltaTime;
+            position += velocity * u_deltaTime;
+            
+            float pointSize = 0.1;
+            gl_Position = vec4(position, 0.0, 1.0);
+            gl_PointSize = pointSize;
+            v_color = a_color;
+        }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragment-shader">
+        precision mediump float;
+        varying vec3 v_color;
+
+        void main() {
+            vec2 center = gl_PointCoord - vec2(0.5);
+            float dist = length(center);
+            float alpha = 1.0 - smoothstep(0.1, 0.15, dist);
+            gl_FragColor = vec4(v_color, alpha);
+        }
+    </script>
+
+    <script>
+        const canvas = document.getElementById('glCanvas');
+
+        const stats = document.createElement('div');
+        stats.style.position = 'fixed';
+        stats.style.top = '10px';
+        stats.style.left = '10px';
+        stats.style.color = 'white';
+        stats.style.fontFamily = 'monospace';
+        stats.style.fontSize = '16px';
+        stats.style.zIndex = '100';
+        document.body.appendChild(stats);
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const gl = canvas.getContext('webgl');
+        gl.viewport(0, 0, canvas.width, canvas.height);
+
+        const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+        const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+
+        gl.shaderSource(vertexShader, document.getElementById('vertex-shader').textContent);
+        gl.shaderSource(fragmentShader, document.getElementById('fragment-shader').textContent);
+        gl.compileShader(vertexShader);
+        gl.compileShader(fragmentShader);
+
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        // Create buffers for particles
+        const colors = [
+            [0.95, 0.61, 0.73], // soft pink
+            [0.56, 0.93, 0.56], // sage green
+            [0.68, 0.85, 0.90], // light blue
+            [0.97, 0.85, 0.45], // warm yellow
+            [0.85, 0.75, 0.95]  // lavender
+        ];;
+
+        const textPoints = getTextPoints("HELLO", 10);
+        const numParticles = textPoints.length;
+
+        const positions = new Float32Array(numParticles * 2);
+        const velocities = new Float32Array(numParticles * 2);
+        const setPoints = new Float32Array(numParticles * 2);
+        const accelerations = new Float32Array(numParticles);
+        const dampings = new Float32Array(numParticles);
+        const particleColors = new Float32Array(numParticles * 3);
+
+        for (let i = 0; i < numParticles; i++) {
+            // Random start positions
+            positions[i * 2] = Math.random() * 1.8 - 0.9;
+            positions[i * 2 + 1] = Math.random() * 1.8 - 0.9;
+
+            velocities[i * 2] = 0;
+            velocities[i * 2 + 1] = 0;
+
+            // Assign text positions as setpoints (loop if more particles than points)
+            const textPoint = textPoints[i % textPoints.length];
+            setPoints[i * 2] = textPoint.x;
+            setPoints[i * 2 + 1] = textPoint.y;
+
+            accelerations[i] = 27 + Math.random() * 3;
+            dampings[i] = 0.9 + Math.random() * 0.09;
+
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            particleColors[i * 3] = randomColor[0];
+            particleColors[i * 3 + 1] = randomColor[1];
+            particleColors[i * 3 + 2] = randomColor[2];
+        }
+
+        // Create and bind buffers
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+
+        const velocityBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, velocities, gl.DYNAMIC_DRAW);
+
+        const setPointBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, setPointBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, setPoints, gl.STATIC_DRAW);
+
+        const accelerationBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, accelerationBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, accelerations, gl.STATIC_DRAW);
+
+        const dampingBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, dampingBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, dampings, gl.STATIC_DRAW);
+
+        const colorBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, particleColors, gl.STATIC_DRAW);
+
+
+        // Get and enable attribute locations
+        const positionAttribLocation = gl.getAttribLocation(program, 'a_position');
+        const velocityAttribLocation = gl.getAttribLocation(program, 'a_velocity');
+        const setPointAttribLocation = gl.getAttribLocation(program, 'a_setPoint');
+        const accelerationAttribLocation = gl.getAttribLocation(program, 'a_acceleration');
+        const dampingAttribLocation = gl.getAttribLocation(program, 'a_damping');
+        const colorAttribLocation = gl.getAttribLocation(program, 'a_color');
+
+        gl.enableVertexAttribArray(positionAttribLocation);
+        gl.enableVertexAttribArray(velocityAttribLocation);
+        gl.enableVertexAttribArray(setPointAttribLocation);
+        gl.enableVertexAttribArray(accelerationAttribLocation);
+        gl.enableVertexAttribArray(dampingAttribLocation);
+        gl.enableVertexAttribArray(colorAttribLocation);
+
+        // Set attribute pointers
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffer);
+        gl.vertexAttribPointer(velocityAttribLocation, 2, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, setPointBuffer);
+        gl.vertexAttribPointer(setPointAttribLocation, 2, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, accelerationBuffer);
+        gl.vertexAttribPointer(accelerationAttribLocation, 1, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, dampingBuffer);
+        gl.vertexAttribPointer(dampingAttribLocation, 1, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+        gl.vertexAttribPointer(colorAttribLocation, 3, gl.FLOAT, false, 0, 0);
+
+        const deltaTimeLocation = gl.getUniformLocation(program, 'u_deltaTime');
+
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+        let lastTime = 0;
+        let frameCount = 0;
+        let lastFpsTime = 0;
+        let fps = 0;
+        function draw(currentTime) {
+            currentTime *= 0.001;
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
+            // Update positions and velocities
+            for (let i = 0; i < numParticles; i++) {
+                const dx = setPoints[i * 2] - positions[i * 2];
+                const dy = setPoints[i * 2 + 1] - positions[i * 2 + 1];
+
+                velocities[i * 2] = velocities[i * 2] * dampings[i] + dx * accelerations[i] * deltaTime;
+                velocities[i * 2 + 1] = velocities[i * 2 + 1] * dampings[i] + dy * accelerations[i] * deltaTime;
+
+                positions[i * 2] += velocities[i * 2] * deltaTime;
+                positions[i * 2 + 1] += velocities[i * 2 + 1] * deltaTime;
+            }
+
+            frameCount++;
+            if (currentTime - lastFpsTime >= 1.0) {
+                fps = frameCount;
+                frameCount = 0;
+                lastFpsTime = currentTime;
+
+                // Update stats display
+                stats.textContent = `
+            FPS: ${fps}
+            Particles: ${numParticles}
+            Delta: ${deltaTime.toFixed(4)}ms
+        `;
+            }
+
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+            // Update buffers
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, velocities, gl.DYNAMIC_DRAW);
+
+            gl.uniform1f(deltaTimeLocation, deltaTime);
+
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.POINTS, 0, numParticles);
+
+            requestAnimationFrame(draw);
+        }
+
+        function getTextPoints(text, density) {
+            const tempCanvas = document.createElement('canvas');
+            const ctx = tempCanvas.getContext('2d');
+
+            // Increase font size and use a heavier font weight
+            ctx.font = 'bold 240px Arial';
+            const metrics = ctx.measureText(text);
+
+            // Double the canvas size for better resolution
+            tempCanvas.width = metrics.width;
+            tempCanvas.height = 240;
+
+            // Reset font settings after canvas resize
+            ctx.font = 'bold 240px Arial';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Enable text anti-aliasing
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // Draw text in the center of the larger canvas
+            ctx.fillText(text, tempCanvas.width / 2, tempCanvas.height / 2);
+
+            // Sample pixels with higher precision
+            const points = [];
+            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
+
+            // Reduce density for more sample points
+            for (let y = 0; y < tempCanvas.height; y += density) {
+                for (let x = 0; x < tempCanvas.width; x += density) {
+                    const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
+                    if (alpha > 128) { // Higher threshold for more defined edges
+                        points.push({
+                            x: (x / tempCanvas.width) * 2 - 1,
+                            y: -(y / tempCanvas.height) * 2 + 1
+                        });
+                    }
+                }
+            }
+
+            return points;
+        }
+
+
+        requestAnimationFrame(draw);
+    </script>
+</body>
+
+</html>
