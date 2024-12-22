@@ -73,7 +73,8 @@
                 colors,
                 textSize,
                 textScale,
-                textDensity
+                textDensity,
+                orderedParticles
             ) {
                 this.particles = {
                     position: {
@@ -101,6 +102,8 @@
                     scale: textScale,
                     density: textDensity
                 };
+
+                this.orderedParticles = orderedParticles;
             }
         }
 
@@ -114,7 +117,8 @@
                     [0.97, 0.85, 0.45],
                     [0.85, 0.75, 0.95]
                 ],
-                240, 1, 1
+                240, 1, 1,
+                false
             ),
 
             neon: new ParticleConfig(
@@ -130,7 +134,7 @@
             minimal: new ParticleConfig(
                 -0.9, 1.6, 60, 10, 0.90, 0.05, 15, 75,
                 [[1.0, 1.0, 1.0]],
-                60, 0.8, 100
+                60, 0.8, 100, true
             )
         };
 
@@ -162,6 +166,8 @@
         const vertexShader = gl.createShader(gl.VERTEX_SHADER);
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
+        let activePointsCount = 0;
+
         gl.shaderSource(vertexShader, document.getElementById('vertex-shader').textContent);
         gl.shaderSource(fragmentShader, document.getElementById('fragment-shader').textContent);
         gl.compileShader(vertexShader);
@@ -174,9 +180,9 @@
         gl.useProgram(program);
 
         const maxPoints = Math.max(
-            getTextPoints("0:00", 1).length,
-            getTextPoints("9:59", 1).length,
-            getTextPoints("END", 1).length
+            getTextPoints("0:00", 1, false).realPointsLength,
+            getTextPoints("8:88", 1, false).realPointsLength,
+            getTextPoints("END", 1, false).realPointsLength
         );
 
 
@@ -304,7 +310,7 @@
             let deltaTime = currentTime - lastTime;
             lastTime = currentTime;
 
-            if (deltaTime > 1) {
+            if (deltaTime > 0.1) {
                 deltaTime = 0.0;
             }
 
@@ -315,6 +321,8 @@
                 accelerations,
                 dampings
             } = particleArrays;
+
+            const renderCount = CONFIG.orderedParticles ? numParticles : activePointsCount;
 
             for (let i = 0; i < numParticles; i++) {
                 const dx = setPoints[i * 2] - positions[i * 2];
@@ -351,13 +359,13 @@
             gl.uniform1f(deltaTimeLocation, deltaTime);
 
             gl.clear(gl.COLOR_BUFFER_BIT);
-            gl.drawArrays(gl.POINTS, 0, numParticles);
+            gl.drawArrays(gl.POINTS, 0, renderCount);
 
             requestAnimationFrame(draw);
         }
 
 
-        function getTextPoints(text, density) {
+        function getTextPoints(text, density, addExtraPoints = true) {
             const textSize = CONFIG.text.size;
             const textScale = CONFIG.text.scale;
 
@@ -383,20 +391,63 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
 
-            for (let y = 0; y < tempCanvas.height; y += density) {
+            if (CONFIG.orderedParticles) {
+                // Left to right scan for text points
                 for (let x = 0; x < tempCanvas.width; x += density) {
-                    const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
-                    if (alpha > 128) {
+                    for (let y = 0; y < tempCanvas.height; y += density) {
+                        const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
+                        if (alpha > 128) {
+                            points.push({
+                                x: ((x / tempCanvas.width) * 2 - 1) * textScale,
+                                y: (-(y / tempCanvas.height) * 2 + 1) * textScale
+                            });
+                        }
+                    }
+                }
+
+                const realPointsLength = points.length;
+
+                if (addExtraPoints) {
+                    // Add circle points
+                    const radius = 1.5;
+                    const remainingPoints = numParticles - points.length;
+                    for (let i = 0; i < remainingPoints; i++) {
+                        const angle = i * (2 * Math.PI / remainingPoints);
                         points.push({
-                            x: ((x / tempCanvas.width) * 2 - 1) * textScale,
-                            y: (-(y / tempCanvas.height) * 2 + 1) * textScale
+                            x: Math.cos(angle) * radius,
+                            y: Math.sin(angle) * radius
                         });
                     }
                 }
-            }
 
-            return points;
+                return { realPointsLength, points };
+            } else {
+                // Top to bottom scan
+                for (let y = 0; y < tempCanvas.height; y += density) {
+                    for (let x = 0; x < tempCanvas.width; x += density) {
+                        const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
+                        if (alpha > 128) {
+                            points.push({
+                                x: ((x / tempCanvas.width) * 2 - 1) * textScale,
+                                y: (-(y / tempCanvas.height) * 2 + 1) * textScale
+                            });
+                        }
+                    }
+                }
+
+                const realPointsLength = points.length;
+
+                if (addExtraPoints) {
+                    while (points.length < numParticles) {
+                        points.push({ x: 0, y: 0 });
+                    }
+                }
+
+                return { realPointsLength, points };
+            }
         }
+
+
 
         let timeTxt = "";
         let endTime = (+new Date) + (60 * 1000);
@@ -422,12 +473,12 @@
                 setTimeout(updateTimer, 1000);
             }
 
-            const textPoints = getTextPoints(timeTxt, 1);
+            const { realPointsLength, points } = getTextPoints(timeTxt, 1, true);
+            activePointsCount = realPointsLength;
 
             for (let i = 0; i < numParticles; i++) {
-                const textPoint = textPoints[i % textPoints.length];
-                setPoints[i * 2] = textPoint.x;
-                setPoints[i * 2 + 1] = textPoint.y;
+                setPoints[i * 2] = points[i].x;
+                setPoints[i * 2 + 1] = points[i].y;
             }
 
             gl.bindBuffer(gl.ARRAY_BUFFER, setPointBuffer);
