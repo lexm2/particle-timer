@@ -61,84 +61,109 @@
 
     <script>
         class ParticleConfig {
-            constructor(
-                positionMin,
-                positionSpread,
-                accelerationBase,
-                accelerationVariation,
-                dampingBase,
-                dampingVariation,
-                sizeBase,
-                sizeVariation,
-                colors,
-                textSize,
-                textScale,
-                textDensity,
-                orderedParticles
-            ) {
+            constructor(config) {
                 this.particles = {
                     position: {
-                        min: positionMin,
-                        spread: positionSpread
+                        min: config.positionMin,
+                        spread: config.positionSpread
                     },
-                    acceleration: {
-                        base: accelerationBase,
-                        variation: accelerationVariation
+                    physics: {
+                        acceleration: {
+                            base: config.accelerationBase,
+                            variation: config.accelerationVariation
+                        },
+                        damping: {
+                            base: config.dampingBase,
+                            variation: config.dampingVariation
+                        }
                     },
-                    damping: {
-                        base: dampingBase,
-                        variation: dampingVariation
-                    },
-                    size: {
-                        base: sizeBase,
-                        variation: sizeVariation
+                    appearance: {
+                        size: {
+                            base: config.sizeBase,
+                            variation: config.sizeVariation
+                        },
+                        colors: config.colors
                     }
                 };
 
-                this.colors = colors;
-
                 this.text = {
-                    size: textSize,
-                    scale: textScale,
-                    density: textDensity
+                    size: config.textSize,
+                    scale: config.textScale,
+                    density: config.textDensity
                 };
 
-                this.orderedParticles = orderedParticles;
+                this.behavior = {
+                    orderedParticles: config.orderedParticles,
+                    radius: config.radius
+                };
             }
         }
 
         const PRESETS = {
-            glitch: new ParticleConfig(
-                -0.9, 1.8, 50, 0.0, 0.95, 0.0, 2, 0.0,
-                [
+            glitch: new ParticleConfig({
+                positionMin: -0.9,
+                positionSpread: 1.8,
+                accelerationBase: 50,
+                accelerationVariation: 0.0,
+                dampingBase: 0.95,
+                dampingVariation: 0.0,
+                sizeBase: 2,
+                sizeVariation: 0.0,
+                colors: [
                     [0.95, 0.61, 0.73],
                     [0.56, 0.93, 0.56],
                     [0.68, 0.85, 0.90],
                     [0.97, 0.85, 0.45],
                     [0.85, 0.75, 0.95]
                 ],
-                240, 1, 1,
-                false
-            ),
+                textSize: 240,
+                textScale: 1,
+                textDensity: 1,
+                orderedParticles: false,
+                radius: 1.5
+            }),
 
-            neon: new ParticleConfig(
-                -0.9, 1.8, 30, 5.0, 0.98, 0.01, 4, 2.0,
-                [
+            neon: new ParticleConfig({
+                positionMin: -0.9,
+                positionSpread: 1.8,
+                accelerationBase: 30,
+                accelerationVariation: 5.0,
+                dampingBase: 0.98,
+                dampingVariation: 0.01,
+                sizeBase: 4,
+                sizeVariation: 2.0,
+                colors: [
                     [1.0, 0.0, 1.0],
                     [0.0, 1.0, 1.0],
                     [1.0, 1.0, 0.0]
                 ],
-                280, 1.2, 2
-            ),
+                textSize: 280,
+                textScale: 1.2,
+                textDensity: 2,
+                orderedParticles: false,
+                radius: 1.5
+            }),
 
-            minimal: new ParticleConfig(
-                -0.9, 1.6, 60, 10, 0.90, 0.05, 15, 75,
-                [[1.0, 1.0, 1.0]],
-                60, 0.8, 100, true
-            )
+            minimal: new ParticleConfig({
+                positionMin: -0.9,
+                positionSpread: 1.6,
+                accelerationBase: 60,
+                accelerationVariation: 10,
+                dampingBase: 0.90,
+                dampingVariation: 0.05,
+                sizeBase: 15,
+                sizeVariation: 75,
+                colors: [[1.0, 1.0, 1.0]],
+                textSize: 30,
+                textScale: 0.4,
+                textDensity: 100,
+                orderedParticles: true,
+                radius: 0.5
+            })
         };
 
         const CONFIG = PRESETS.glitch;
+        console.log(CONFIG);
 
         const canvas = document.getElementById('glCanvas');
 
@@ -211,16 +236,17 @@
                 particleArrays.velocities[i * 2 + 1] = 0;
                 particleArrays.setPoints[i * 2] = 0;
                 particleArrays.setPoints[i * 2 + 1] = 0;
-                particleArrays.accelerations[i] = CONFIG.particles.acceleration.base + Math.random() * CONFIG.particles.acceleration.variation;
-                particleArrays.dampings[i] = CONFIG.particles.damping.base + Math.random() * CONFIG.particles.damping.variation;
-                particleArrays.particleSizes[i] = CONFIG.particles.size.base + Math.random() * CONFIG.particles.size.variation;
+                particleArrays.accelerations[i] = CONFIG.particles.physics.acceleration.base + Math.random() * CONFIG.particles.physics.acceleration.variation;
+                particleArrays.dampings[i] = CONFIG.particles.physics.damping.base + Math.random() * CONFIG.particles.physics.damping.variation;
+                particleArrays.particleSizes[i] = CONFIG.particles.appearance.size.base + Math.random() * CONFIG.particles.appearance.size.variation;
 
-                const randomColor = CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)];
+                const randomColor = CONFIG.particles.appearance.colors[Math.floor(Math.random() * CONFIG.particles.appearance.colors.length)];
                 particleArrays.particleColors[i * 3] = randomColor[0];
                 particleArrays.particleColors[i * 3 + 1] = randomColor[1];
                 particleArrays.particleColors[i * 3 + 2] = randomColor[2];
             }
         }
+
 
 
 
@@ -322,9 +348,9 @@
                 dampings
             } = particleArrays;
 
-            const renderCount = CONFIG.orderedParticles ? numParticles : activePointsCount;
+            const renderCount = CONFIG.behavior.orderedParticles ? numParticles : activePointsCount;
 
-            for (let i = 0; i < numParticles; i++) {
+            for (let i = 0; i < renderCount; i++) {
                 const dx = setPoints[i * 2] - positions[i * 2];
                 const dy = setPoints[i * 2 + 1] - positions[i * 2 + 1];
 
@@ -391,7 +417,7 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
 
-            if (CONFIG.orderedParticles) {
+            if (CONFIG.behavior.orderedParticles) {
                 // Left to right scan for text points
                 for (let x = 0; x < tempCanvas.width; x += density) {
                     for (let y = 0; y < tempCanvas.height; y += density) {
@@ -409,13 +435,14 @@
 
                 if (addExtraPoints) {
                     // Add circle points
-                    const radius = 1.5;
+                    const radius = CONFIG.behavior.radius;
+                    const aspectRatio = canvas.width / canvas.height;
                     const remainingPoints = numParticles - points.length;
                     for (let i = 0; i < remainingPoints; i++) {
                         const angle = i * (2 * Math.PI / remainingPoints);
                         points.push({
                             x: Math.cos(angle) * radius,
-                            y: Math.sin(angle) * radius
+                            y: Math.sin(angle) * radius * aspectRatio
                         });
                     }
                 }
