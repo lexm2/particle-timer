@@ -22,26 +22,12 @@
 
     <script type="x-shader/x-vertex" id="vertex-shader">
         attribute vec2 a_position;
-        attribute vec2 a_velocity;
-        attribute vec2 a_setPoint;
-        attribute float a_acceleration;
-        attribute float a_damping;
         attribute vec3 a_color;
         attribute float a_size;
-        uniform float u_deltaTime;
         varying vec3 v_color;
 
         void main() {
-            vec2 position = a_position; 
-            vec2 velocity = a_velocity;
-            
-            vec2 toTarget = a_setPoint - position;
-            vec2 acceleration = toTarget * a_acceleration;
-            
-            velocity = velocity * a_damping + acceleration * u_deltaTime;
-            position += velocity * u_deltaTime;
-            
-            gl_Position = vec4(position, 0.0, 1.0);
+            gl_Position = vec4(a_position, 0.0, 1.0);
             gl_PointSize = a_size;
             v_color = a_color;
         }
@@ -251,28 +237,12 @@
 
 
         const positionBuffer = gl.createBuffer();
-        const velocityBuffer = gl.createBuffer();
-        const setPointBuffer = gl.createBuffer();
-        const accelerationBuffer = gl.createBuffer();
-        const dampingBuffer = gl.createBuffer();
         const sizeBuffer = gl.createBuffer();
         const colorBuffer = gl.createBuffer();
 
         function updateBuffers(arrays) {
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, arrays.positions, gl.DYNAMIC_DRAW);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, arrays.velocities, gl.DYNAMIC_DRAW);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, setPointBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, arrays.setPoints, gl.DYNAMIC_DRAW);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, accelerationBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, arrays.accelerations, gl.STATIC_DRAW);
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, dampingBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, arrays.dampings, gl.STATIC_DRAW);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, sizeBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, arrays.particleSizes, gl.STATIC_DRAW);
@@ -286,43 +256,21 @@
 
 
         const positionAttribLocation = gl.getAttribLocation(program, 'a_position');
-        const velocityAttribLocation = gl.getAttribLocation(program, 'a_velocity');
-        const setPointAttribLocation = gl.getAttribLocation(program, 'a_setPoint');
-        const accelerationAttribLocation = gl.getAttribLocation(program, 'a_acceleration');
-        const dampingAttribLocation = gl.getAttribLocation(program, 'a_damping');
         const sizeAttribLocation = gl.getAttribLocation(program, 'a_size');
         const colorAttribLocation = gl.getAttribLocation(program, 'a_color');
 
         gl.enableVertexAttribArray(positionAttribLocation);
-        gl.enableVertexAttribArray(velocityAttribLocation);
-        gl.enableVertexAttribArray(setPointAttribLocation);
-        gl.enableVertexAttribArray(accelerationAttribLocation);
-        gl.enableVertexAttribArray(dampingAttribLocation);
         gl.enableVertexAttribArray(sizeAttribLocation);
         gl.enableVertexAttribArray(colorAttribLocation);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
         gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffer);
-        gl.vertexAttribPointer(velocityAttribLocation, 2, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, setPointBuffer);
-        gl.vertexAttribPointer(setPointAttribLocation, 2, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, accelerationBuffer);
-        gl.vertexAttribPointer(accelerationAttribLocation, 1, gl.FLOAT, false, 0, 0);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, dampingBuffer);
-        gl.vertexAttribPointer(dampingAttribLocation, 1, gl.FLOAT, false, 0, 0);
-
         gl.bindBuffer(gl.ARRAY_BUFFER, sizeBuffer);
         gl.vertexAttribPointer(sizeAttribLocation, 1, gl.FLOAT, false, 0, 0);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
         gl.vertexAttribPointer(colorAttribLocation, 3, gl.FLOAT, false, 0, 0);
-
-        const deltaTimeLocation = gl.getUniformLocation(program, 'u_deltaTime');
 
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -354,12 +302,16 @@
                 const dx = setPoints[i * 2] - positions[i * 2];
                 const dy = setPoints[i * 2 + 1] - positions[i * 2 + 1];
 
-                velocities[i * 2] = velocities[i * 2] * dampings[i] + dx * accelerations[i] * deltaTime;
-                velocities[i * 2 + 1] = velocities[i * 2 + 1] * dampings[i] + dy * accelerations[i] * deltaTime;
+                velocities[i * 2] = velocities[i * 2] * Math.pow(dampings[i], deltaTime * 240) + dx * accelerations[i] * deltaTime;
+                velocities[i * 2 + 1] = velocities[i * 2 + 1] * Math.pow(dampings[i], deltaTime * 240) + dy * accelerations[i] * deltaTime;
 
-                positions[i * 2] += velocities[i * 2] * deltaTime;
-                positions[i * 2 + 1] += velocities[i * 2 + 1] * deltaTime;
+                positions[i * 2] += velocities[i * 2];
+                positions[i * 2 + 1] += velocities[i * 2 + 1];
             }
+
+            console.log("Delta time " + deltaTime * 240)
+            console.log("Damping " + dampings[0])
+            console.log(Math.pow(dampings[0], deltaTime * 240))
 
             frameCount++;
             if (currentTime - lastFpsTime >= 1.0) {
@@ -379,15 +331,14 @@
             gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, velocityBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, velocities, gl.DYNAMIC_DRAW);
-
-            gl.uniform1f(deltaTimeLocation, deltaTime);
-
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.drawArrays(gl.POINTS, 0, renderCount);
 
             requestAnimationFrame(draw);
+
+            // setTimeout(() => {
+            //     requestAnimationFrame(draw);
+            // }, 1);
         }
 
 
@@ -507,9 +458,6 @@
                 setPoints[i * 2] = points[i].x;
                 setPoints[i * 2 + 1] = points[i].y;
             }
-
-            gl.bindBuffer(gl.ARRAY_BUFFER, setPointBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, setPoints, gl.DYNAMIC_DRAW);
         }
 
         function twoDigits(n) {
