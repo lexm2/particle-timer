@@ -89,9 +89,9 @@
             glitch: new ParticleConfig({
                 positionMin: -0.9,
                 positionSpread: 1.8,
-                accelerationBase: 50,
+                accelerationBase: 1,
                 accelerationVariation: 0.0,
-                dampingBase: 0.95,
+                dampingBase: 0.90,
                 dampingVariation: 0.0,
                 sizeBase: 2,
                 sizeVariation: 0.0,
@@ -112,7 +112,7 @@
             neon: new ParticleConfig({
                 positionMin: -0.9,
                 positionSpread: 1.8,
-                accelerationBase: 30,
+                accelerationBase: 1,
                 accelerationVariation: 5.0,
                 dampingBase: 0.98,
                 dampingVariation: 0.01,
@@ -133,9 +133,9 @@
             minimal: new ParticleConfig({
                 positionMin: -0.9,
                 positionSpread: 1.6,
-                accelerationBase: 60,
-                accelerationVariation: 10,
-                dampingBase: 0.90,
+                accelerationBase: 1,
+                accelerationVariation: 0.1,
+                dampingBase: 0.85,
                 dampingVariation: 0.05,
                 sizeBase: 15,
                 sizeVariation: 75,
@@ -148,7 +148,7 @@
             })
         };
 
-        const CONFIG = PRESETS.glitch;
+        const CONFIG = PRESETS.minimal;
         console.log(CONFIG);
 
         const canvas = document.getElementById('glCanvas');
@@ -308,10 +308,6 @@
                 positions[i * 2] += velocities[i * 2];
                 positions[i * 2 + 1] += velocities[i * 2 + 1];
             }
-
-            console.log("Delta time " + deltaTime * 240)
-            console.log("Damping " + dampings[0])
-            console.log(Math.pow(dampings[0], deltaTime * 240))
 
             frameCount++;
             if (currentTime - lastFpsTime >= 1.0) {
