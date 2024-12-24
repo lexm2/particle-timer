@@ -89,7 +89,7 @@
             glitch: new ParticleConfig({
                 positionMin: -0.9,
                 positionSpread: 1.8,
-                accelerationBase: 1,
+                accelerationBase: 50,
                 accelerationVariation: 0.0,
                 dampingBase: 0.90,
                 dampingVariation: 0.0,
@@ -131,12 +131,12 @@
             }),
 
             minimal: new ParticleConfig({
-                positionMin: -0.9,
-                positionSpread: 1.6,
-                accelerationBase: 1,
-                accelerationVariation: 0.1,
-                dampingBase: 0.85,
-                dampingVariation: 0.05,
+                positionMin: -0.7,
+                positionSpread: 1.2,
+                accelerationBase: 3,
+                accelerationVariation: 3,
+                dampingBase: 0.95,
+                dampingVariation: 0.04,
                 sizeBase: 15,
                 sizeVariation: 75,
                 colors: [[1.0, 1.0, 1.0]],
@@ -298,15 +298,18 @@
 
             const renderCount = CONFIG.behavior.orderedParticles ? numParticles : activePointsCount;
 
+            const dampingRate = (deltaTime) ** 2;
+
             for (let i = 0; i < renderCount; i++) {
                 const dx = setPoints[i * 2] - positions[i * 2];
                 const dy = setPoints[i * 2 + 1] - positions[i * 2 + 1];
 
-                velocities[i * 2] = velocities[i * 2] * Math.pow(dampings[i], deltaTime * 240) + dx * accelerations[i] * deltaTime;
-                velocities[i * 2 + 1] = velocities[i * 2 + 1] * Math.pow(dampings[i], deltaTime * 240) + dy * accelerations[i] * deltaTime;
+                velocities[i * 2] = (velocities[i * 2] * dampings[i] * dampingRate) + (dx * accelerations[i]);
+                velocities[i * 2 + 1] = (velocities[i * 2 + 1] * dampings[i] * dampingRate) + (dy * accelerations[i]);
 
-                positions[i * 2] += velocities[i * 2];
-                positions[i * 2 + 1] += velocities[i * 2 + 1];
+
+                positions[i * 2] += velocities[i * 2] * (deltaTime);
+                positions[i * 2 + 1] += velocities[i * 2 + 1] * (deltaTime);
             }
 
             frameCount++;
@@ -330,13 +333,15 @@
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.drawArrays(gl.POINTS, 0, renderCount);
 
-            requestAnimationFrame(draw);
-
-            // setTimeout(() => {
-            //     requestAnimationFrame(draw);
-            // }, 1);
+            if (true) {
+                requestAnimationFrame(draw);
+            }
+            else {
+                setTimeout(() => {
+                    requestAnimationFrame(draw);
+                }, 1);
+            }
         }
-
 
         function getTextPoints(text, density, addExtraPoints = true) {
             const textSize = CONFIG.text.size;
