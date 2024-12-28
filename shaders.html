@@ -14,10 +14,74 @@
             height: 100vh;
             display: block;
         }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        input,
+        select {
+            margin-left: 10px;
+            background: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        button {
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #555;
+        }
     </style>
 </head>
 
 <body>
+    <div id="menu"
+        style="position: fixed; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); color: white; padding: 20px; font-family: Arial; z-index: 1000;">
+        <h2>Particle Timer Settings</h2>
+
+        <div class="section">
+            <h3>Timer Settings</h3>
+            <label>Minutes: <input type="number" id="minutes" min="0" value="1"></label>
+            <label>Seconds: <input type="number" id="seconds" min="0" max="59" value="0"></label>
+        </div>
+
+        <div class="section">
+            <h3>Particle Style</h3>
+            <select id="presetStyle">
+                <option value="minimal">Minimal</option>
+                <option value="neon">Neon</option>
+                <option value="glitch">Glitch</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <h3>Custom Settings</h3>
+            <label>Text Size: <input type="range" id="textSize" min="100" max="400" value="240"></label>
+            <label>Particle Size: <input type="range" id="particleSize" min="1" max="20" value="4"></label>
+            <label>Particle Count: <input type="range" id="particleDensity" min="1" max="5" value="2"></label>
+            <label>Orbit Radius: <input type="range" id="radius" min="0.5" max="3" step="0.1" value="1.5"></label>
+        </div>
+
+        <button id="startTimer" style="padding: 10px 20px; margin-top: 20px;">Start Timer</button>
+    </div>
+
     <canvas id="glCanvas"></canvas>
 
     <script type="x-shader/x-vertex" id="vertex-shader">
@@ -79,8 +143,9 @@
                 };
 
                 this.behavior = {
-                    orderedParticles: config.orderedParticles,
-                    radius: config.radius
+                    verticallyOrderedParticles: config.verticallyOrderedParticles,
+                    radius: config.radius,
+                    extraParticleMode: config.extraParticleMode
                 };
             }
         }
@@ -89,11 +154,11 @@
             glitch: new ParticleConfig({
                 positionMin: -0.9,
                 positionSpread: 1.8,
-                accelerationBase: 50,
+                accelerationBase: 10,
                 accelerationVariation: 0.0,
                 dampingBase: 0.90,
                 dampingVariation: 0.0,
-                sizeBase: 2,
+                sizeBase: 3,
                 sizeVariation: 0.0,
                 colors: [
                     [0.95, 0.61, 0.73],
@@ -105,17 +170,18 @@
                 textSize: 240,
                 textScale: 1,
                 textDensity: 1,
-                orderedParticles: false,
+                verticallyOrderedParticles: false,
+                extraParticleMode: "center",
                 radius: 1.5
             }),
 
             neon: new ParticleConfig({
                 positionMin: -0.9,
                 positionSpread: 1.8,
-                accelerationBase: 1,
+                accelerationBase: 5,
                 accelerationVariation: 5.0,
-                dampingBase: 0.98,
-                dampingVariation: 0.01,
+                dampingBase: 0.99,
+                dampingVariation: 0.005,
                 sizeBase: 4,
                 sizeVariation: 2.0,
                 colors: [
@@ -124,10 +190,11 @@
                     [1.0, 1.0, 0.0]
                 ],
                 textSize: 280,
-                textScale: 1.2,
+                textScale: 1,
                 textDensity: 2,
-                orderedParticles: false,
-                radius: 1.5
+                verticallyOrderedParticles: true,
+                extraParticleMode: "center",
+                radius: 2
             }),
 
             minimal: new ParticleConfig({
@@ -143,12 +210,13 @@
                 textSize: 30,
                 textScale: 0.4,
                 textDensity: 100,
-                orderedParticles: true,
+                verticallyOrderedParticles: true,
+                extraParticleMode: "circle",
                 radius: 0.5
             })
         };
 
-        const CONFIG = PRESETS.minimal;
+        let CONFIG = PRESETS.minimal;
         console.log(CONFIG);
 
         const canvas = document.getElementById('glCanvas');
@@ -170,6 +238,8 @@
 
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+
+        let timerRunning = false;
 
         const gl = canvas.getContext('webgl');
         gl.viewport(0, 0, canvas.width, canvas.height);
@@ -222,8 +292,8 @@
                 particleArrays.velocities[i * 2 + 1] = 0;
                 particleArrays.setPoints[i * 2] = 0;
                 particleArrays.setPoints[i * 2 + 1] = 0;
-                particleArrays.accelerations[i] = CONFIG.particles.physics.acceleration.base + Math.random() * CONFIG.particles.physics.acceleration.variation;
-                particleArrays.dampings[i] = CONFIG.particles.physics.damping.base + Math.random() * CONFIG.particles.physics.damping.variation;
+                particleArrays.accelerations[i] = Math.max(CONFIG.particles.physics.acceleration.base + Math.random() * CONFIG.particles.physics.acceleration.variation, 0.0001);
+                particleArrays.dampings[i] = Math.min(CONFIG.particles.physics.damping.base + Math.random() * CONFIG.particles.physics.damping.variation, 0.9999);
                 particleArrays.particleSizes[i] = CONFIG.particles.appearance.size.base + Math.random() * CONFIG.particles.appearance.size.variation;
 
                 const randomColor = CONFIG.particles.appearance.colors[Math.floor(Math.random() * CONFIG.particles.appearance.colors.length)];
@@ -253,8 +323,6 @@
 
         updateBuffers(particleArrays);
 
-
-
         const positionAttribLocation = gl.getAttribLocation(program, 'a_position');
         const sizeAttribLocation = gl.getAttribLocation(program, 'a_size');
         const colorAttribLocation = gl.getAttribLocation(program, 'a_color');
@@ -280,6 +348,8 @@
         let lastFpsTime = 0;
         let fps = 0;
         function draw(currentTime) {
+            if (!timerRunning) return;
+
             currentTime *= 0.001;
             let deltaTime = currentTime - lastTime;
             lastTime = currentTime;
@@ -296,7 +366,7 @@
                 dampings
             } = particleArrays;
 
-            const renderCount = CONFIG.behavior.orderedParticles ? numParticles : activePointsCount;
+            const renderCount = CONFIG.behavior.extraParticleMode === 'circle' ? numParticles : activePointsCount;
 
             const dampingRate = (deltaTime) ** 2;
 
@@ -369,8 +439,9 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
 
-            if (CONFIG.behavior.orderedParticles) {
-                // Left to right scan for text points
+            // Scan for text points based on vertical ordering preference
+            console.log(CONFIG.behavior.verticallyOrderedParticles);
+            if (CONFIG.behavior.verticallyOrderedParticles) {
                 for (let x = 0; x < tempCanvas.width; x += density) {
                     for (let y = 0; y < tempCanvas.height; y += density) {
                         const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
@@ -382,26 +453,7 @@
                         }
                     }
                 }
-
-                const realPointsLength = points.length;
-
-                if (addExtraPoints) {
-                    // Add circle points
-                    const radius = CONFIG.behavior.radius;
-                    const aspectRatio = canvas.width / canvas.height;
-                    const remainingPoints = numParticles - points.length;
-                    for (let i = 0; i < remainingPoints; i++) {
-                        const angle = i * (2 * Math.PI / remainingPoints);
-                        points.push({
-                            x: Math.cos(angle) * radius,
-                            y: Math.sin(angle) * radius * aspectRatio
-                        });
-                    }
-                }
-
-                return { realPointsLength, points };
             } else {
-                // Top to bottom scan
                 for (let y = 0; y < tempCanvas.height; y += density) {
                     for (let x = 0; x < tempCanvas.width; x += density) {
                         const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
@@ -413,18 +465,46 @@
                         }
                     }
                 }
-
-                const realPointsLength = points.length;
-
-                if (addExtraPoints) {
-                    while (points.length < numParticles) {
-                        points.push({ x: 0, y: 0 });
-                    }
-                }
-
-                return { realPointsLength, points };
             }
+
+            const realPointsLength = points.length;
+
+            if (addExtraPoints) {
+                const remainingPoints = numParticles - points.length;
+
+                switch (CONFIG.behavior.extraParticleMode) {
+                    case 'circle':
+                        const radius = CONFIG.behavior.radius;
+                        const aspectRatio = canvas.width / canvas.height;
+                        for (let i = 0; i < remainingPoints; i++) {
+                            const angle = i * (2 * Math.PI / remainingPoints);
+                            points.push({
+                                x: Math.cos(angle) * radius,
+                                y: Math.sin(angle) * radius * aspectRatio
+                            });
+                        }
+                        break;
+
+                    case 'center':
+                        for (let i = 0; i < remainingPoints; i++) {
+                            points.push({ x: 0, y: 0 });
+                        }
+                        break;
+
+                    case 'maintain':
+                        for (let i = 0; i < remainingPoints; i++) {
+                            points.push({
+                                x: particleArrays.positions[(points.length + i) * 2],
+                                y: particleArrays.positions[(points.length + i) * 2 + 1]
+                            });
+                        }
+                        break;
+                }
+            }
+
+            return { realPointsLength, points };
         }
+
 
 
 
@@ -465,9 +545,30 @@
             return (n < 10 ? '0' : '') + n;
         }
 
-        updateTimer();
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            document.getElementById('menu').style.display = 'block';
+        });
 
-        requestAnimationFrame(draw);
+        document.getElementById('startTimer').addEventListener('click', () => {
+            const minutes = parseInt(document.getElementById('minutes').value);
+            const seconds = parseInt(document.getElementById('seconds').value);
+            // const style = document.getElementById('presetStyle').value;
+
+            // Object.assign(CONFIG, PRESETS[style]);
+
+            // CONFIG.text.size = parseInt(document.getElementById('textSize').value);
+            // CONFIG.particles.appearance.size.base = parseInt(document.getElementById('particleSize').value);
+            // CONFIG.text.density = parseInt(document.getElementById('particleDensity').value);
+            // CONFIG.behavior.radius = parseFloat(document.getElementById('radius').value);
+
+            endTime = (+new Date) + ((minutes * 60 + seconds) * 1000);
+            document.getElementById('menu').style.display = 'none';
+
+            timerRunning = true;
+            updateTimer();
+            requestAnimationFrame(draw);
+        });
     </script>
 </body>
 
