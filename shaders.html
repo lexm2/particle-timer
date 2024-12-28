@@ -112,41 +112,43 @@
     <script>
         class ParticleConfig {
             constructor(config) {
-                this.particles = {
-                    position: {
-                        min: config.positionMin,
-                        spread: config.positionSpread
-                    },
-                    physics: {
-                        acceleration: {
-                            base: config.accelerationBase,
-                            variation: config.accelerationVariation
+                if (config) {
+                    this.particles = {
+                        position: {
+                            min: config.positionMin,
+                            spread: config.positionSpread
                         },
-                        damping: {
-                            base: config.dampingBase,
-                            variation: config.dampingVariation
+                        physics: {
+                            acceleration: {
+                                base: config.accelerationBase,
+                                variation: config.accelerationVariation
+                            },
+                            damping: {
+                                base: config.dampingBase,
+                                variation: config.dampingVariation
+                            }
+                        },
+                        appearance: {
+                            size: {
+                                base: config.sizeBase,
+                                variation: config.sizeVariation
+                            },
+                            colors: config.colors
                         }
-                    },
-                    appearance: {
-                        size: {
-                            base: config.sizeBase,
-                            variation: config.sizeVariation
-                        },
-                        colors: config.colors
-                    }
-                };
+                    };
 
-                this.text = {
-                    size: config.textSize,
-                    scale: config.textScale,
-                    density: config.textDensity
-                };
+                    this.text = {
+                        size: config.textSize,
+                        scale: config.textScale,
+                        density: config.textDensity
+                    };
 
-                this.behavior = {
-                    verticallyOrderedParticles: config.verticallyOrderedParticles,
-                    radius: config.radius,
-                    extraParticleMode: config.extraParticleMode
-                };
+                    this.behavior = {
+                        verticallyOrderedParticles: config.verticallyOrderedParticles,
+                        radius: config.radius,
+                        extraParticleMode: config.extraParticleMode
+                    };
+                }
             }
         }
 
@@ -193,7 +195,7 @@
                 textScale: 1,
                 textDensity: 2,
                 verticallyOrderedParticles: true,
-                extraParticleMode: "center",
+                extraParticleMode: "maintain",
                 radius: 2
             }),
 
@@ -216,8 +218,7 @@
             })
         };
 
-        let CONFIG = PRESETS.minimal;
-        console.log(CONFIG);
+        let CONFIG = new ParticleConfig();
 
         const canvas = document.getElementById('glCanvas');
 
@@ -248,6 +249,7 @@
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
         let activePointsCount = 0;
+        let particleArrays;
 
         gl.shaderSource(vertexShader, document.getElementById('vertex-shader').textContent);
         gl.shaderSource(fragmentShader, document.getElementById('fragment-shader').textContent);
@@ -260,17 +262,6 @@
         gl.linkProgram(program);
         gl.useProgram(program);
 
-        const maxPoints = Math.max(
-            getTextPoints("0:00", 1, false).realPointsLength,
-            getTextPoints("8:88", 1, false).realPointsLength,
-            getTextPoints("END", 1, false).realPointsLength
-        );
-
-
-        numParticles = maxPoints;
-        particleArrays = createParticleArrays(numParticles);
-        initializeParticles(particleArrays, 0, numParticles);
-        console.log(particleArrays);
         function createParticleArrays(count) {
             return {
                 positions: new Float32Array(count * 2),
@@ -320,8 +311,6 @@
             gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, arrays.particleColors, gl.STATIC_DRAW);
         }
-
-        updateBuffers(particleArrays);
 
         const positionAttribLocation = gl.getAttribLocation(program, 'a_position');
         const sizeAttribLocation = gl.getAttribLocation(program, 'a_size');
@@ -439,8 +428,6 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
 
-            // Scan for text points based on vertical ordering preference
-            console.log(CONFIG.behavior.verticallyOrderedParticles);
             if (CONFIG.behavior.verticallyOrderedParticles) {
                 for (let x = 0; x < tempCanvas.width; x += density) {
                     for (let y = 0; y < tempCanvas.height; y += density) {
@@ -553,14 +540,10 @@
         document.getElementById('startTimer').addEventListener('click', () => {
             const minutes = parseInt(document.getElementById('minutes').value);
             const seconds = parseInt(document.getElementById('seconds').value);
-            // const style = document.getElementById('presetStyle').value;
+            const style = document.getElementById('presetStyle').value;
 
-            // Object.assign(CONFIG, PRESETS[style]);
-
-            // CONFIG.text.size = parseInt(document.getElementById('textSize').value);
-            // CONFIG.particles.appearance.size.base = parseInt(document.getElementById('particleSize').value);
-            // CONFIG.text.density = parseInt(document.getElementById('particleDensity').value);
-            // CONFIG.behavior.radius = parseFloat(document.getElementById('radius').value);
+            console.log(PRESETS[style]);
+            initializeWithConfig(PRESETS[style]);
 
             endTime = (+new Date) + ((minutes * 60 + seconds) * 1000);
             document.getElementById('menu').style.display = 'none';
@@ -569,6 +552,23 @@
             updateTimer();
             requestAnimationFrame(draw);
         });
+
+        function initializeWithConfig(newConfig) {
+            Object.assign(CONFIG, newConfig);
+
+            const maxPoints = Math.max(
+                getTextPoints("0:00", 1, false).realPointsLength,
+                getTextPoints("8:88", 1, false).realPointsLength,
+                getTextPoints("END", 1, false).realPointsLength
+            );
+
+            numParticles = maxPoints;
+            particleArrays = createParticleArrays(numParticles);
+            initializeParticles(particleArrays, 0, numParticles);
+            updateBuffers(particleArrays);
+        }
+
+
     </script>
 </body>
 
