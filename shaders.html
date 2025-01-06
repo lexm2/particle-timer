@@ -93,7 +93,8 @@
             <div id="advancedOptions" style="display: none;">
                 <label>Text Resolution: <input type="number" id="textSize" min="100" max="400" value="240"></label>
                 <label>Size Variation: <input type="number" id="sizeVariation" min="0" max="75" value="2"></label>
-                <label>Particle Sepearation: <input type="number" id="particleDensity" min="1" max="5" value="2"></label>
+                <label>Particle Sepearation: <input type="number" id="particleDensity" min="1" max="5"
+                        value="2"></label>
                 <label>Orbit Radius: <input type="number" id="radius" min="0.5" max="3" step="0.1" value="1.5"></label>
 
                 <h4>Particle Physics</h4>
@@ -124,7 +125,14 @@
             </div>
         </div>
 
+        <div class="section">
+            <h3>Save Configuration</h3>
+            <label>Configuration Name: <input type="text" id="configName"></label>
+            <button id="saveConfig">Save</button>
+        </div>
+
         <button id="startTimer" style="padding: 10px 20px; margin-top: 20px; ">Start Timer</button>
+
         <div style="padding-bottom: 60px;"></div>
     </div>
 
@@ -699,6 +707,51 @@
             requestAnimationFrame(draw);
         });
 
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('menu').style.display = 'none';
+            }
+        });
+
+        function saveConfigToCookie() {
+            const configName = document.getElementById('configName').value;
+            if (!configName) {
+                document.getElementById('configName').classList.add('error');
+                return;
+            }
+
+            const config = {
+                name: configName,
+                textSize: document.getElementById('textSize').value,
+                textScale: document.getElementById('textScale').value,
+                particleSize: document.getElementById('particleSize').value,
+                sizeVariation: document.getElementById('sizeVariation').value,
+                particleDensity: document.getElementById('particleDensity').value,
+                radius: document.getElementById('radius').value,
+                positionMin: document.getElementById('positionMin').value,
+                positionSpread: document.getElementById('positionSpread').value,
+                accelerationBase: document.getElementById('accelerationBase').value,
+                accelerationVar: document.getElementById('accelerationVar').value,
+                dampingBase: document.getElementById('dampingBase').value,
+                dampingVar: document.getElementById('dampingVar').value,
+                extraParticleMode: document.getElementById('extraParticleMode').value,
+                colors: Array.from(document.querySelectorAll('.particleColor')).map(cp => cp.value)
+            };
+
+            document.cookie = `${configName}=${JSON.stringify(config)}; expires=${new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString()}; path=/; SameSite=Strict`;
+
+
+            document.getElementById('configName').value = '';
+            document.getElementById('configName').classList.remove('error');
+
+            loadSavedPresets();
+        }
+
+        // Add event listener for the save button
+        document.getElementById('saveConfig').addEventListener('click', saveConfigToCookie);
+
+
+
 
         document.getElementById('presetStyle').addEventListener('change', (e) => {
             const selectedPreset = PRESETS[e.target.value];
@@ -833,6 +886,52 @@
             initializeParticles(particleArrays, 0, numParticles);
             updateBuffers(particleArrays);
         }
+
+        function loadSavedPresets() {
+            const presetSelect = document.getElementById('presetStyle');
+
+            document.cookie.split(';').forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                if (name) {
+                    try {
+                        const config = JSON.parse(value);
+                        if (config.name) { // Verify it's our config cookie
+                            const option = document.createElement('option');
+                            option.value = name;
+                            option.textContent = config.name;
+                            presetSelect.appendChild(option);
+
+                            PRESETS[name] = new ParticleConfig({
+                                textSize: parseFloat(config.textSize),
+                                textScale: parseFloat(config.textScale),
+                                sizeBase: parseFloat(config.particleSize),
+                                sizeVariation: parseFloat(config.sizeVariation),
+                                textDensity: parseFloat(config.particleDensity),
+                                radius: parseFloat(config.radius),
+                                positionMin: parseFloat(config.positionMin),
+                                positionSpread: parseFloat(config.positionSpread),
+                                accelerationBase: parseFloat(config.accelerationBase),
+                                accelerationVariation: parseFloat(config.accelerationVar),
+                                dampingBase: parseFloat(config.dampingBase),
+                                dampingVariation: parseFloat(config.dampingVar),
+                                extraParticleMode: config.extraParticleMode,
+                                colors: config.colors.map(hex => [
+                                    parseInt(hex.slice(1, 3), 16) / 255,
+                                    parseInt(hex.slice(3, 5), 16) / 255,
+                                    parseInt(hex.slice(5, 7), 16) / 255
+                                ]),
+                                verticallyOrderedParticles: true
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Error parsing cookie:', e);
+                    }
+                }
+
+            });
+        }
+
+        loadSavedPresets();
     </script>
 </body>
 
