@@ -69,7 +69,7 @@
                 <option value="minimal">Minimal</option>
                 <option value="neon">Neon</option>
                 <option value="glitch">Glitch</option>
-                <option value="test">Test</option>
+                <option value="offScreenCircle">Off Screen Circle</option>
             </select>
         </div>
 
@@ -96,7 +96,12 @@
                 <label>Particle Sepearation: <input type="number" id="particleDensity" min="1" max="5"
                         value="2"></label>
                 <label>Orbit Radius: <input type="number" id="radius" min="0.5" max="3" step="0.1" value="1.5"></label>
-
+                <h4>Particle Ordering</h4>
+                <select id="particleOrdering">
+                    <option value="vertical">Vertical</option>
+                    <option value="horizontal">Horizontal</option>
+                    <option value="optimized">Optimized</option>
+                </select>
                 <h4>Particle Physics</h4>
                 <label>Position Min: <input type="number" id="positionMin" min="-2" max="0" step="0.1"
                         value="-0.9"></label>
@@ -198,7 +203,7 @@
                     };
 
                     this.behavior = {
-                        verticallyOrderedParticles: config.verticallyOrderedParticles,
+                        ordering: config.ordering,
                         radius: config.radius,
                         extraParticleMode: config.extraParticleMode
                     };
@@ -206,8 +211,36 @@
             }
         }
 
+        function getConfigFromInputs() {
+            return new ParticleConfig({
+                positionMin: parseFloat(document.getElementById('positionMin').value),
+                positionSpread: parseFloat(document.getElementById('positionSpread').value),
+                accelerationBase: parseFloat(document.getElementById('accelerationBase').value),
+                accelerationVariation: parseFloat(document.getElementById('accelerationVar').value),
+                dampingBase: parseFloat(document.getElementById('dampingBase').value),
+                dampingVariation: parseFloat(document.getElementById('dampingVar').value),
+                sizeBase: parseFloat(document.getElementById('particleSize').value),
+                sizeVariation: parseFloat(document.getElementById('sizeVariation').value),
+                textSize: parseFloat(document.getElementById('textSize').value),
+                textScale: parseFloat(document.getElementById('textScale').value),
+                textDensity: parseFloat(document.getElementById('particleDensity').value),
+                ordering: document.getElementById('particleOrdering').value,
+                extraParticleMode: document.getElementById('extraParticleMode').value,
+                radius: parseFloat(document.getElementById('radius').value),
+                colors: Array.from(document.querySelectorAll('.particleColor')).map(cp => {
+                    const hex = cp.value;
+                    return [
+                        parseInt(hex.slice(1, 3), 16) / 255,
+                        parseInt(hex.slice(3, 5), 16) / 255,
+                        parseInt(hex.slice(5, 7), 16) / 255
+                    ];
+                })
+            });
+        }
+
+
         const PRESETS = {
-            test: new ParticleConfig({
+            minimal: new ParticleConfig({
                 positionMin: -0.7,
                 positionSpread: 1.2,
                 accelerationBase: 3,
@@ -220,8 +253,8 @@
                 textSize: 30,
                 textScale: 0.4,
                 textDensity: 1,
-                verticallyOrderedParticles: true,
-                extraParticleMode: "center",
+                ordering: "vertical",
+                extraParticleMode: "wave",
                 radius: 0.5
             }),
 
@@ -244,7 +277,7 @@
                 textSize: 240,
                 textScale: 1,
                 textDensity: 1,
-                verticallyOrderedParticles: false,
+                ordering: "horizontal",
                 extraParticleMode: "center",
                 radius: 1.5
             }),
@@ -266,12 +299,12 @@
                 textSize: 280,
                 textScale: 1,
                 textDensity: 2,
-                verticallyOrderedParticles: true,
+                ordering: "vertical",
                 extraParticleMode: "maintain",
                 radius: 2
             }),
 
-            minimal: new ParticleConfig({
+            offScreenCircle: new ParticleConfig({
                 positionMin: -0.7,
                 positionSpread: 1.2,
                 accelerationBase: 3,
@@ -284,7 +317,7 @@
                 textSize: 30,
                 textScale: 0.4,
                 textDensity: 1,
-                verticallyOrderedParticles: true,
+                ordering: "vertical",
                 extraParticleMode: "circle",
                 radius: 0.5
             })
@@ -321,6 +354,7 @@
         const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
 
         let activePointsCount = 0;
+        let previousPoints = new Map();
         let particleArrays;
 
         gl.shaderSource(vertexShader, document.getElementById('vertex-shader').textContent);
@@ -551,8 +585,7 @@
             }
         };
 
-
-        function getTextPoints(text, addExtraPoints = true) {
+        function getOrderedPoints(text) {
             const density = CONFIG.text.density;
             const textSize = CONFIG.text.size;
             const textScale = CONFIG.text.scale;
@@ -579,32 +612,89 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
 
-            if (CONFIG.behavior.verticallyOrderedParticles) {
-                for (let x = 0; x < tempCanvas.width; x += density) {
-                    for (let y = 0; y < tempCanvas.height; y += density) {
-                        const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
-                        if (alpha > 128) {
-                            points.push({
-                                x: ((x / tempCanvas.width) * 2 - 1) * textScale,
-                                y: (-(y / tempCanvas.height) * 2 + 1) * textScale
-                            });
-                        }
-                    }
-                }
-            } else {
-                for (let y = 0; y < tempCanvas.height; y += density) {
+            switch (CONFIG.behavior.ordering) {
+                case 'vertical':
                     for (let x = 0; x < tempCanvas.width; x += density) {
-                        const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
-                        if (alpha > 128) {
-                            points.push({
-                                x: ((x / tempCanvas.width) * 2 - 1) * textScale,
-                                y: (-(y / tempCanvas.height) * 2 + 1) * textScale
-                            });
+                        for (let y = 0; y < tempCanvas.height; y += density) {
+                            const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
+                            if (alpha > 128) {
+                                points.push({
+                                    x: ((x / tempCanvas.width) * 2 - 1) * textScale,
+                                    y: (-(y / tempCanvas.height) * 2 + 1) * textScale
+                                });
+                            }
                         }
                     }
-                }
+                    break;
+
+                case 'horizontal':
+                    for (let y = 0; y < tempCanvas.height; y += density) {
+                        for (let x = 0; x < tempCanvas.width; x += density) {
+                            const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
+                            if (alpha > 128) {
+                                points.push({
+                                    x: ((x / tempCanvas.width) * 2 - 1) * textScale,
+                                    y: (-(y / tempCanvas.height) * 2 + 1) * textScale
+                                });
+                            }
+                        }
+                    }
+                    break;
+                case 'optimized':
+                    const validPixels = [];
+
+                    for (let x = 0; x < tempCanvas.width; x += density) {
+                        for (let y = 0; y < tempCanvas.height; y += density) {
+                            const alpha = imageData[(y * tempCanvas.width + x) * 4 + 3];
+                            if (alpha > 128) {
+                                validPixels.push({
+                                    x: ((x / tempCanvas.width) * 2 - 1) * textScale,
+                                    y: (-(y / tempCanvas.height) * 2 + 1) * textScale
+                                });
+                            }
+                        }
+                    }
+
+                    if (previousPoints.size === 0) {
+                        previousPoints.clear();
+                        validPixels.forEach((point, index) => {
+                            const key = `${point.x},${point.y}`;
+                            previousPoints.set(key, index);
+                        });
+                        return validPixels;
+                    }
+
+                    const result = new Array(validPixels.length);
+                    const usedPoints = new Set();
+                    const unassignedIndices = new Set(Array.from({ length: validPixels.length }, (_, i) => i));
+
+                    validPixels.forEach((point, i) => {
+                        const key = `${point.x},${point.y}`;
+                        const previousIndex = previousPoints.get(key);
+
+                        if (previousIndex !== undefined && previousIndex < validPixels.length) {
+                            result[previousIndex] = point;
+                            usedPoints.add(i);
+                            unassignedIndices.delete(previousIndex);
+                        }
+                    });
+
+                    const remainingPoints = validPixels.filter((_, i) => !usedPoints.has(i));
+                    const remainingIndices = Array.from(unassignedIndices);
+
+                    remainingIndices.forEach((index, i) => {
+                        result[index] = remainingPoints[i];
+                    });
+
+                    return result;
             }
 
+            return points;
+        }
+
+
+        function getTextPoints(text, addExtraPoints = true) {
+            const points = getOrderedPoints(text);
             const realPointsLength = points.length;
 
             if (addExtraPoints) {
@@ -616,11 +706,14 @@
                 }
             }
 
+            previousPoints.clear();
+            points.forEach((point, index) => {
+                const key = `${point.x},${point.y}`;
+                previousPoints.set(key, index);
+            });
+
             return { realPointsLength, points };
         }
-
-
-
 
         let timeTxt = "";
         let endTime = (+new Date) + (60 * 1000);
@@ -673,32 +766,7 @@
             const minutes = parseInt(document.getElementById('minutes').value);
             const seconds = parseInt(document.getElementById('seconds').value);
 
-            const newConfig = new ParticleConfig({
-                positionMin: parseFloat(document.getElementById('positionMin').value),
-                positionSpread: parseFloat(document.getElementById('positionSpread').value),
-                accelerationBase: parseFloat(document.getElementById('accelerationBase').value),
-                accelerationVariation: parseFloat(document.getElementById('accelerationVar').value),
-                dampingBase: parseFloat(document.getElementById('dampingBase').value),
-                dampingVariation: parseFloat(document.getElementById('dampingVar').value),
-                sizeBase: parseFloat(document.getElementById('particleSize').value),
-                sizeVariation: parseFloat(document.getElementById('sizeVariation').value),
-                textSize: parseFloat(document.getElementById('textSize').value),
-                textScale: parseFloat(document.getElementById('textScale').value),
-                textDensity: parseFloat(document.getElementById('particleDensity').value),
-                verticallyOrderedParticles: true,
-                extraParticleMode: document.getElementById('extraParticleMode').value,
-                radius: parseFloat(document.getElementById('radius').value),
-                colors: Array.from(document.querySelectorAll('.particleColor')).map(cp => {
-                    const hex = cp.value;
-                    return [
-                        parseInt(hex.slice(1, 3), 16) / 255,
-                        parseInt(hex.slice(3, 5), 16) / 255,
-                        parseInt(hex.slice(5, 7), 16) / 255
-                    ];
-                })
-            });
-
-            initializeWithConfig(newConfig, minutes, seconds);
+            initializeWithConfig(getConfigFromInputs(), minutes, seconds);
             endTime = (+new Date) + ((minutes * 60 + seconds) * 1000);
             document.getElementById('menu').style.display = 'none';
 
@@ -722,20 +790,7 @@
 
             const config = {
                 name: configName,
-                textSize: document.getElementById('textSize').value,
-                textScale: document.getElementById('textScale').value,
-                particleSize: document.getElementById('particleSize').value,
-                sizeVariation: document.getElementById('sizeVariation').value,
-                particleDensity: document.getElementById('particleDensity').value,
-                radius: document.getElementById('radius').value,
-                positionMin: document.getElementById('positionMin').value,
-                positionSpread: document.getElementById('positionSpread').value,
-                accelerationBase: document.getElementById('accelerationBase').value,
-                accelerationVar: document.getElementById('accelerationVar').value,
-                dampingBase: document.getElementById('dampingBase').value,
-                dampingVar: document.getElementById('dampingVar').value,
-                extraParticleMode: document.getElementById('extraParticleMode').value,
-                colors: Array.from(document.querySelectorAll('.particleColor')).map(cp => cp.value)
+                ...getConfigFromInputs()
             };
 
             document.cookie = `${configName}=${JSON.stringify(config)}; expires=${new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString()}; path=/; SameSite=Strict`;
@@ -774,45 +829,12 @@
             colorPickers.insertBefore(colorInput, document.getElementById('addColor'));
         });
 
-        document.querySelectorAll('#advancedOptions input, #advancedOptions select').forEach(input => {
-            input.addEventListener('change', () => {
-                const newConfig = {
-                    positionMin: parseFloat(document.getElementById('positionMin').value),
-                    positionSpread: parseFloat(document.getElementById('positionSpread').value),
-                    accelerationBase: parseFloat(document.getElementById('accelerationBase').value),
-                    accelerationVariation: parseFloat(document.getElementById('accelerationVar').value),
-                    dampingBase: parseFloat(document.getElementById('dampingBase').value),
-                    dampingVariation: parseFloat(document.getElementById('dampingVar').value),
-                    extraParticleMode: document.getElementById('extraParticleMode').value,
-                    colors: Array.from(document.querySelectorAll('.particleColor')).map(cp => {
-                        const hex = cp.value;
-                        return [
-                            parseInt(hex.slice(1, 3), 16) / 255,
-                            parseInt(hex.slice(3, 5), 16) / 255,
-                            parseInt(hex.slice(5, 7), 16) / 255
-                        ];
-                    })
-                };
-
-                CONFIG.particles.position, {
-                    min: newConfig.positionMin,
-                    spread: newConfig.positionSpread
-                };
-
-                CONFIG.particles.physics.acceleration = {
-                    base: newConfig.accelerationBase,
-                    variation: newConfig.accelerationVariation
-                };
-
-                CONFIG.particles.physics.damping = {
-                    base: newConfig.dampingBase,
-                    variation: newConfig.dampingVariation
-                };
-
-                CONFIG.behavior.extraParticleMode = newConfig.extraParticleMode;
-                CONFIG.particles.appearance.colors = newConfig.colors;
+        document.querySelectorAll('#advancedOptions input, #advancedOptions select')
+            .forEach(input => {
+                input.addEventListener('change', () => {
+                    CONFIG = getConfigFromInputs();
+                });
             });
-        });
 
         function updateInputsFromPreset(preset) {
             document.getElementById('textSize').value = preset.text.size;
@@ -895,32 +917,15 @@
                 if (name) {
                     try {
                         const config = JSON.parse(value);
-                        if (config.name) { // Verify it's our config cookie
+                        if (config.name) {
                             const option = document.createElement('option');
                             option.value = name;
                             option.textContent = config.name;
                             presetSelect.appendChild(option);
 
                             PRESETS[name] = new ParticleConfig({
-                                textSize: parseFloat(config.textSize),
-                                textScale: parseFloat(config.textScale),
-                                sizeBase: parseFloat(config.particleSize),
-                                sizeVariation: parseFloat(config.sizeVariation),
-                                textDensity: parseFloat(config.particleDensity),
-                                radius: parseFloat(config.radius),
-                                positionMin: parseFloat(config.positionMin),
-                                positionSpread: parseFloat(config.positionSpread),
-                                accelerationBase: parseFloat(config.accelerationBase),
-                                accelerationVariation: parseFloat(config.accelerationVar),
-                                dampingBase: parseFloat(config.dampingBase),
-                                dampingVariation: parseFloat(config.dampingVar),
-                                extraParticleMode: config.extraParticleMode,
-                                colors: config.colors.map(hex => [
-                                    parseInt(hex.slice(1, 3), 16) / 255,
-                                    parseInt(hex.slice(3, 5), 16) / 255,
-                                    parseInt(hex.slice(5, 7), 16) / 255
-                                ]),
-                                verticallyOrderedParticles: true
+                                ...config,
+                                colors: config.colors.map(hexToRGB),
                             });
                         }
                     } catch (e) {
