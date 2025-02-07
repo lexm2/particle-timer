@@ -327,12 +327,32 @@
 
         let mouseX = 0;
         let mouseY = 0;
+        let mouseVelocityX = 0;
+        let mouseVelocityY = 0;
         let mouseClicked = false;
+        let mouseDown = false;
+
+        const rect = canvas.getBoundingClientRect();
+
+        canvas.addEventListener('mousedown', () => {
+            mouseDown = true;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouseDown = false;
+        });
 
         canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            mouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
-            mouseY = -((e.clientY - rect.top) / rect.height * 2 - 1);
+            const newMouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
+            const newMouseY = -((e.clientY - rect.top) / rect.height * 2 - 1);
+
+            if (mouseDown) {
+                mouseVelocityX = newMouseX - mouseX;
+                mouseVelocityY = newMouseY - mouseY;
+            }
+
+            mouseX = newMouseX;
+            mouseY = newMouseY;
         });
 
         canvas.addEventListener('click', () => {
@@ -506,7 +526,42 @@
                     }
                 }
                 mouseClicked = false;
+            } else if (mouseDown) {
+                const mouseSpeed = Math.sqrt(mouseVelocityX * mouseVelocityX + mouseVelocityY * mouseVelocityY);
+                const pushForce = 2000 * (1 + mouseSpeed * 20); // Much stronger base force
+                const pushRadius = 200 * (1 + mouseSpeed * 5); // Larger radius of effect
+
+                const mousePixelX = mouseX * canvas.width / 2;
+                const mousePixelY = mouseY * canvas.height / 2;
+
+                for (let i = 0; i < renderCount; i++) {
+                    const particleX = setPoints[i * 2] * canvas.width / 2;
+                    const particleY = setPoints[i * 2 + 1] * canvas.height / 2;
+
+                    const dx = particleX - mousePixelX;
+                    const dy = particleY - mousePixelY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < pushRadius) {
+                        const normalX = dx / distance;
+                        const normalY = dy / distance;
+
+                        // Enhanced vortex effect
+                        const crossProduct = (normalX * mouseVelocityY - normalY * mouseVelocityX) * 10;
+
+                        // Add rotational component based on distance from center
+                        const rotationFactor = Math.pow(1 - distance / pushRadius, 2) * 3;
+                        const forceX = (-normalY * crossProduct - dx * rotationFactor) * mouseSpeed;
+                        const forceY = (normalX * crossProduct - dy * rotationFactor) * mouseSpeed;
+
+                        const forceMagnitude = (1 - distance / pushRadius) * pushForce;
+                        externalForces[i * 2] = forceX * forceMagnitude / canvas.width;
+                        externalForces[i * 2 + 1] = forceY * forceMagnitude / canvas.height;
+                    }
+                }
             }
+
+
             for (let i = 0; i < renderCount; i++) {
                 const dx = setPoints[i * 2] - positions[i * 2];
                 const dy = setPoints[i * 2 + 1] - positions[i * 2 + 1];
