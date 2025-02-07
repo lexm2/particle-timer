@@ -57,101 +57,6 @@
         <button id="fullscreenButton"
             style="position: absolute; top: 10px; right: 60px; padding: 10px 20px;">Fullscreen</button>
         <h2>Particle Timer Settings</h2>
-
-        <button id="startTimer" style="padding: 10px 20px; margin-top: 20px; ">Start Timer</button>
-
-        <div class="section">
-            <h3>Timer Settings</h3>
-            <label>Minutes: <input type="number" id="minutes" min="0" value="1"></label>
-            <label>Seconds: <input type="number" id="seconds" min="0" max="59" value="0"></label>
-            <div style="margin-top: 10px;">
-                <button style="padding: 10px 20px;"
-                    onclick="document.getElementById('minutes').value=5;document.getElementById('seconds').value=0">5
-                    min</button>
-                <button style="padding: 10px 20px; "
-                    onclick="document.getElementById('minutes').value=10;document.getElementById('seconds').value=0">10
-                    min</button>
-                <button style="padding: 10px 20px; "
-                    onclick="document.getElementById('minutes').value=20;document.getElementById('seconds').value=0">20
-                    min</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3>Particle Style</h3>
-            <select id="presetStyle">
-                <option value="minimal">Minimal</option>
-                <option value="neon">Neon</option>
-                <option value="glitch">Glitch</option>
-                <option value="offScreenCircle">Off Screen Circle</option>
-            </select>
-        </div>
-
-        <div class="section">
-            <h3>Basic Settings</h3>
-            <label>Text Scale: <input type="number" id="textScale" min="0.1" max="2" step="0.1" value="1"></label>
-            <label>Particle Size: <input type="number" id="particleSize" min="1" max="20" value="4"></label>
-        </div>
-
-        <div class="section">
-            <h3>Colors</h3>
-            <div id="colorPickers">
-                <input type="color" class="particleColor" value="#ffffff">
-                <button id="addColor">Add Color</button>
-                <button id="removeColor">Remove Color</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3>Advanced Options</h3>
-            <button id="toggleAdvanced" style="margin-bottom: 10px;">Show Advanced Options</button>
-            <div id="advancedOptions" style="display: none;">
-                <label>Text Resolution: <input type="number" id="textSize" min="100" max="400" value="240"></label>
-                <label>Size Variation: <input type="number" id="sizeVariation" min="0" max="75" value="2"></label>
-                <label>Particle Sepearation: <input type="number" id="particleDensity" min="1" max="5"
-                        value="2"></label>
-                <label>Orbit Radius: <input type="number" id="radius" min="0.5" max="3" step="0.1" value="1.5"></label>
-                <h4>Particle Ordering</h4>
-                <select id="particleOrdering">
-                    <option value="vertical">Vertical</option>
-                    <option value="horizontal">Horizontal</option>
-                    <option value="optimized">Optimized</option>
-                </select>
-                <h4>Particle Physics</h4>
-                <label>Position Min: <input type="number" id="positionMin" min="-2" max="0" step="0.1"
-                        value="-0.9"></label>
-                <label>Position Spread: <input type="number" id="positionSpread" min="0" max="3" step="0.1"
-                        value="1.8"></label>
-                <label>Acceleration Base: <input type="number" id="accelerationBase" min="0" max="20" step="0.5"
-                        value="5"></label>
-                <label>Acceleration Variation: <input type="number" id="accelerationVar" min="0" max="10" step="0.5"
-                        value="5"></label>
-
-                <h4>Particle Behavior</h4>
-                <label>Damping Base: <input type="number" id="dampingBase" min="0.8" max="0.999" step="0.001"
-                        value="0.99"></label>
-                <label>Damping Variation: <input type="number" id="dampingVar" min="0" max="0.1" step="0.001"
-                        value="0.005"></label>
-
-                <h4>Extra Particle Mode</h4>
-                <select id="extraParticleMode">
-                    <option value="circle">Circle</option>
-                    <option value="center">Center</option>
-                    <option value="maintain">Maintain</option>
-                    <option value="spiral">Spiral</option>
-                    <option value="wave">Wave</option>
-                    <option value="fountain">Fountain</option>
-                    <option value="test">Test</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="section">
-            <h3>Save Configuration</h3>
-            <label>Configuration Name: <input type="text" id="configName"></label>
-            <button id="saveConfig">Save</button>
-        </div>
-        <div style="padding-bottom: 60px;"></div>
     </div>
     <canvas id="glCanvas"></canvas>
     <audio id="tickSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568.wav"></audio>
@@ -184,45 +89,144 @@
 
     <script>
         // Particle Configuration System
-        class ParticleConfig {
-            constructor(config) {
-                if (config) {
-                    this.particles = {
-                        position: {
-                            min: config.positionMin,
-                            spread: config.positionSpread
+        const ConfigSchema = {
+            fields: {
+                particles: {
+                    position: {
+                        min: { type: 'number', min: -2, max: 0, step: 0.1, default: -0.7 },
+                        spread: { type: 'number', min: 0, max: 3, step: 0.1, default: 1.2 }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: { type: 'number', min: 0, max: 20, step: 0.5, default: 3 },
+                            variation: { type: 'number', min: 0, max: 10, step: 0.5, default: 3 }
                         },
-                        physics: {
-                            acceleration: {
-                                base: config.accelerationBase,
-                                variation: config.accelerationVariation
-                            },
-                            damping: {
-                                base: config.dampingBase,
-                                variation: config.dampingVariation
-                            }
-                        },
-                        appearance: {
-                            size: {
-                                base: config.sizeBase,
-                                variation: config.sizeVariation
-                            },
-                            colors: config.colors
+                        damping: {
+                            base: { type: 'number', min: 0.8, max: 0.999, step: 0.001, default: 0.95 },
+                            variation: { type: 'number', min: 0, max: 0.1, step: 0.001, default: 0.04 }
                         }
-                    };
-                    this.text = {
-                        size: config.textSize,
-                        scale: config.textScale,
-                        density: config.textDensity
-                    };
-                    this.behavior = {
-                        ordering: config.ordering,
-                        radius: config.radius,
-                        extraParticleMode: config.extraParticleMode
-                    };
+                    },
+                    appearance: {
+                        size: {
+                            base: { type: 'number', min: 1, max: 20, default: 15 },
+                            variation: { type: 'number', min: 0, max: 75, default: 75 }
+                        },
+                        colors: {
+                            type: 'colorArray',
+                            default: [
+                                [0.29, 0.31, 0.30],
+                                [0.05, 0.60, 0.65],
+                                [0.24, 0.64, 0.67],
+                                [0.96, 0.80, 0.38],
+                                [0.99, 0.54, 0.44]
+                            ]
+                        }
+                    }
+                },
+                text: {
+                    size: { type: 'number', min: 100, max: 400, default: 30 },
+                    scale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.6 },
+                    density: { type: 'number', min: 1, max: 5, default: 1 }
+                },
+                behavior: {
+                    ordering: {
+                        type: 'select',
+                        options: ['vertical', 'horizontal', 'optimized'],
+                        default: 'vertical'
+                    },
+                    radius: { type: 'number', min: 0.5, max: 3, step: 0.1, default: 0.8 },
+                    extraParticleMode: {
+                        type: 'select',
+                        options: ['circle', 'center', 'maintain', 'spiral', 'wave', 'fountain', 'test'],
+                        default: 'circle'
+                    }
+                }
+            },
+
+            createDefault() {
+                return this.createFromSchema(this.fields);
+            },
+
+            createFromSchema(schema) {
+                const result = {};
+                Object.entries(schema).forEach(([key, value]) => {
+                    if (value.type) {
+                        result[key] = value.default;
+                    } else {
+                        result[key] = this.createFromSchema(value);
+                    }
+                });
+                return result;
+            },
+
+            generateUI(container) {
+                this.buildUIFromSchema(this.fields, container);
+            },
+
+            buildUIFromSchema(schema, container, path = '') {
+                Object.entries(schema).forEach(([key, value]) => {
+                    const currentPath = path ? `${path}.${key}` : key;
+
+                    if (value.type) {
+                        container.appendChild(this.createControl(key, value, currentPath));
+                    } else {
+                        const section = document.createElement('div');
+                        section.className = 'section';
+                        section.innerHTML = `<h3>${key.charAt(0).toUpperCase() + key.slice(1)}</h3>`;
+                        this.buildUIFromSchema(value, section, currentPath);
+                        container.appendChild(section);
+                    }
+                });
+            },
+
+            createControl(key, config, path) {
+                const label = document.createElement('label');
+                label.textContent = key.charAt(0).toUpperCase() + key.slice(1) + ': ';
+
+                const input = this.createInputByType(config);
+                input.id = path.replace(/\./g, '_');
+                input.dataset.configPath = path;
+
+                label.appendChild(input);
+                return label;
+            },
+
+            createInputByType(config) {
+                switch (config.type) {
+                    case 'number':
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.min = config.min;
+                        input.max = config.max;
+                        input.step = config.step || 1;
+                        input.value = config.default;
+                        return input;
+
+                    case 'select':
+                        const select = document.createElement('select');
+                        config.options.forEach(option => {
+                            const opt = document.createElement('option');
+                            opt.value = option;
+                            opt.textContent = option;
+                            select.appendChild(opt);
+                        });
+                        select.value = config.default;
+                        return select;
+
+                    case 'colorArray':
+                        const div = document.createElement('div');
+                        div.id = 'colorPickers';
+                        const colorInput = document.createElement('input');
+                        colorInput.type = 'color';
+                        colorInput.className = 'particleColor';
+                        colorInput.value = '#ffffff';
+                        div.appendChild(colorInput);
+                        return div;
                 }
             }
-        }
+        };
+
+
 
         // Core state management
         const STATE = {
@@ -347,82 +351,117 @@
         };
 
         const PRESETS = {
-            minimal: new ParticleConfig({
-                positionMin: -0.7,
-                positionSpread: 1.2,
-                accelerationBase: 3,
-                accelerationVariation: 3,
-                dampingBase: 0.95,
-                dampingVariation: 0.04,
-                sizeBase: 15,
-                sizeVariation: 75,
-                colors: [
-                    [0.29, 0.31, 0.30], // #4a4e4d
-                    [0.05, 0.60, 0.65], // #0e9aa7
-                    [0.24, 0.64, 0.67], // #3da4ab
-                    [0.96, 0.80, 0.38], // #f6cd61
-                    [0.99, 0.54, 0.44]  // #fe8a71
-                ],
-                textSize: 30,
-                textScale: 0.6,
-                textDensity: 1,
-                ordering: "vertical",
-                extraParticleMode: "circle",
-                radius: 0.8
-            }),
+            minimal: {
+                particles: {
+                    position: {
+                        min: -0.7,
+                        spread: 1.2
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 3,
+                            variation: 3
+                        },
+                        damping: {
+                            base: 0.95,
+                            variation: 0.04
+                        }
+                    },
+                    appearance: {
+                        size: {
+                            base: 15,
+                            variation: 75
+                        },
+                        colors: [
+                            [0.29, 0.31, 0.30], // #4a4e4d
+                            [0.05, 0.60, 0.65], // #0e9aa7
+                            [0.24, 0.64, 0.67], // #3da4ab
+                            [0.96, 0.80, 0.38], // #f6cd61
+                            [0.99, 0.54, 0.44]  // #fe8a71
+                        ]
+                    }
+                },
+                text: {
+                    size: 30,
+                    scale: 0.6,
+                    density: 1
+                },
+                behavior: {
+                    ordering: "vertical",
+                    extraParticleMode: "circle",
+                    radius: 0.8
+                }
+            },
 
-            glitch: new ParticleConfig({
-                positionMin: -0.9,
-                positionSpread: 1.8,
-                accelerationBase: 10,
-                accelerationVariation: 0.0,
-                dampingBase: 0.90,
-                dampingVariation: 0.0,
-                sizeBase: 3,
-                sizeVariation: 0.0,
-                colors: [
-                    [0.95, 0.61, 0.73],
-                    [0.56, 0.93, 0.56],
-                    [0.68, 0.85, 0.90],
-                    [0.97, 0.85, 0.45],
-                    [0.85, 0.75, 0.95]
-                ],
-                textSize: 240,
-                textScale: 1,
-                textDensity: 1,
-                ordering: "horizontal",
-                extraParticleMode: "center",
-                radius: 1.5
-            }),
-
-            neon: new ParticleConfig({
-                positionMin: -0.9,
-                positionSpread: 1.8,
-                accelerationBase: 5,
-                accelerationVariation: 5.0,
-                dampingBase: 0.99,
-                dampingVariation: 0.005,
-                sizeBase: 4,
-                sizeVariation: 2.0,
-                colors: [
-                    [1.0, 0.0, 1.0],
-                    [0.0, 1.0, 1.0],
-                    [1.0, 1.0, 0.0]
-                ],
-                textSize: 280,
-                textScale: 1,
-                textDensity: 2,
-                ordering: "vertical",
-                extraParticleMode: "maintain",
-                radius: 2
-            }),
+            neon: {
+                particles: {
+                    position: {
+                        min: -0.9,
+                        spread: 1.8
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 5,
+                            variation: 5.0
+                        },
+                        damping: {
+                            base: 0.99,
+                            variation: 0.005
+                        }
+                    },
+                    appearance: {
+                        size: {
+                            base: 4,
+                            variation: 2.0
+                        },
+                        colors: [
+                            [1.0, 0.0, 1.0],
+                            [0.0, 1.0, 1.0],
+                            [1.0, 1.0, 0.0]
+                        ]
+                    }
+                },
+                text: {
+                    size: 280,
+                    scale: 1,
+                    density: 2
+                },
+                behavior: {
+                    ordering: "vertical",
+                    extraParticleMode: "maintain",
+                    radius: 2
+                }
+            }
         };
 
-        // Add preset management functions
+        function applyPreset(presetName) {
+            const preset = PRESETS[presetName];
+            if (!preset) return;
+
+            STATE.config = preset;
+
+            // Update UI based on schema paths
+            document.querySelectorAll('[data-config-path]').forEach(input => {
+                const path = input.dataset.configPath.split('.');
+                let value = preset;
+
+                // Navigate to the correct value in preset
+                for (const key of path) {
+                    value = value[key];
+                }
+
+                if (input.type === 'color') {
+                    input.value = rgbToHex(value);
+                } else {
+                    input.value = value;
+                }
+            });
+        }
+
         function loadPresets() {
-            // Load default presets
-            Object.entries(STATE.presets.default).forEach(([name, config]) => {
-                STATE.presets.saved.set(name, new ParticleConfig(config));
+            // Load default presets into state
+            Object.entries(PRESETS).forEach(([name, config]) => {
+                STATE.presets.saved.set(name, config);
             });
 
             // Load saved presets from cookies
@@ -431,9 +470,7 @@
                 if (name) {
                     try {
                         const config = JSON.parse(value);
-                        if (config.name) {
-                            STATE.presets.saved.set(name, new ParticleConfig(config));
-                        }
+                        STATE.presets.saved.set(name, config);
                     } catch (e) {
                         console.warn('Invalid preset in cookie:', name);
                     }
@@ -451,40 +488,6 @@
             });
         }
 
-        function applyPreset(presetName) {
-            const preset = STATE.presets.saved.get(presetName);
-            if (!preset) return;
-
-            STATE.presets.current = preset;
-            STATE.config = preset;
-
-            // Update UI elements
-            document.getElementById('textSize').value = preset.text.size;
-            document.getElementById('textScale').value = preset.text.scale;
-            document.getElementById('particleSize').value = preset.particles.appearance.size.base;
-            document.getElementById('particleDensity').value = preset.text.density;
-            document.getElementById('radius').value = preset.behavior.radius;
-            document.getElementById('particleOrdering').value = preset.behavior.ordering;
-            document.getElementById('positionMin').value = preset.particles.position.min;
-            document.getElementById('positionSpread').value = preset.particles.position.spread;
-            document.getElementById('accelerationBase').value = preset.particles.physics.acceleration.base;
-            document.getElementById('accelerationVar').value = preset.particles.physics.acceleration.variation;
-            document.getElementById('dampingBase').value = preset.particles.physics.damping.base;
-            document.getElementById('dampingVar').value = preset.particles.physics.damping.variation;
-            document.getElementById('extraParticleMode').value = preset.behavior.extraParticleMode;
-            document.getElementById('sizeVariation').value = preset.particles.appearance.size.variation;
-
-            // Update color pickers
-            const colorPickers = document.getElementById('colorPickers');
-            colorPickers.querySelectorAll('.particleColor').forEach(picker => picker.remove());
-            preset.particles.appearance.colors.forEach(color => {
-                const colorInput = document.createElement('input');
-                colorInput.type = 'color';
-                colorInput.className = 'particleColor';
-                colorInput.value = `#${color.map(c => Math.round(c * 255).toString(16).padStart(2, '0')).join('')}`;
-                colorPickers.insertBefore(colorInput, document.getElementById('addColor'));
-            });
-        }
 
         function initializeWithConfig(newConfig, minutes, seconds) {
             // Update global config
@@ -535,34 +538,38 @@
         }
 
         function getConfigFromInputs() {
-            const colorInputs = Array.from(document.querySelectorAll('.particleColor'));
-            const colors = colorInputs.map(cp => {
-                const hex = cp.value;
-                return [
-                    parseInt(hex.slice(1, 3), 16) / 255,
-                    parseInt(hex.slice(3, 5), 16) / 255,
-                    parseInt(hex.slice(5, 7), 16) / 255
-                ];
+            const config = ConfigSchema.createDefault();
+
+            document.querySelectorAll('[data-config-path]').forEach(input => {
+                const path = input.dataset.configPath.split('.');
+                let target = config;
+
+                // Navigate to the correct nested object
+                for (let i = 0; i < path.length - 1; i++) {
+                    target = target[path[i]];
+                }
+
+                const key = path[path.length - 1];
+                if (key === 'colors') {
+                    // Handle color array specially
+                    target[key] = Array.from(document.querySelectorAll('.particleColor')).map(cp => {
+                        const hex = cp.value;
+                        return [
+                            parseInt(hex.slice(1, 3), 16) / 255,
+                            parseInt(hex.slice(3, 5), 16) / 255,
+                            parseInt(hex.slice(5, 7), 16) / 255
+                        ];
+                    });
+                } else if (input.type === 'number') {
+                    target[key] = parseFloat(input.value);
+                } else {
+                    target[key] = input.value;
+                }
             });
 
-            return new ParticleConfig({
-                positionMin: parseFloat(document.getElementById('positionMin').value),
-                positionSpread: parseFloat(document.getElementById('positionSpread').value),
-                accelerationBase: parseFloat(document.getElementById('accelerationBase').value),
-                accelerationVariation: parseFloat(document.getElementById('accelerationVar').value),
-                dampingBase: parseFloat(document.getElementById('dampingBase').value),
-                dampingVariation: parseFloat(document.getElementById('dampingVar').value),
-                sizeBase: parseFloat(document.getElementById('particleSize').value),
-                sizeVariation: parseFloat(document.getElementById('sizeVariation').value),
-                textSize: parseFloat(document.getElementById('textSize').value),
-                textScale: parseFloat(document.getElementById('textScale').value),
-                textDensity: parseFloat(document.getElementById('particleDensity').value),
-                ordering: document.getElementById('particleOrdering').value,
-                extraParticleMode: document.getElementById('extraParticleMode').value,
-                radius: parseFloat(document.getElementById('radius').value),
-                colors: colors
-            });
+            return config;
         }
+
 
         // Helper functions
         function compileShader(gl, type, source) {
@@ -696,8 +703,9 @@
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.size);
             gl.bufferData(gl.ARRAY_BUFFER, arrays.particleSizes, gl.STATIC_DRAW);
 
+            const colorArray = new Float32Array(arrays.particleColors);
             gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-            gl.bufferData(gl.ARRAY_BUFFER, arrays.particleColors, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, colorArray, gl.STATIC_DRAW);
         }
 
         // Optimized particle modes
@@ -736,8 +744,8 @@
                 init: (points, remainingPoints) => {
                     for (let i = 0; i < remainingPoints; i++) {
                         points.push({
-                            x: particleArrays.positions[(points.length + i) * 2],
-                            y: particleArrays.positions[(points.length + i) * 2 + 1]
+                            x: STATE.particles.arrays.positions[(points.length + i) * 2],
+                            y: STATE.particles.arrays.positions[(points.length + i) * 2 + 1]
                         });
                     }
                 }
@@ -874,6 +882,7 @@
 
             const textMetrics = ctx.measureText(text);
             const textWidth = textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
+            const padding = textMetrics.actualBoundingBoxLeft;
 
             const defaultMetric = ctx.measureText("0:00");
 
@@ -882,7 +891,7 @@
 
             const dynamicScale = textScale * (textWidth / referenceWidth);
 
-            textCanvas.width = textWidth;
+            textCanvas.width = textWidth + Math.abs(padding * 2);
             textCanvas.height = textSize;
 
             ctx.font = `bold ${textSize}px Arial`;
@@ -1064,9 +1073,12 @@
         // Optimized initialization
         function init() {
             initGL();
+            optimizedResize();
+            STATE.canvas.rect = STATE.render.canvas.getBoundingClientRect();
+            initUI();
             setupEventListeners();
             loadPresets();
-            STATE.config = new ParticleConfig(PRESETS[document.getElementById('presetStyle').value]);
+            STATE.config = ConfigSchema.createDefault();
 
             STATE.stats.element = document.createElement('div');
             Object.assign(STATE.stats.element.style, {
@@ -1079,10 +1091,57 @@
                 zIndex: '100'
             });
             document.body.appendChild(STATE.stats.element);
-
-            optimizedResize();
-            STATE.canvas.rect = STATE.render.canvas.getBoundingClientRect();
         }
+
+        function initUI() {
+            const menu = document.getElementById('menu');
+
+            // Add timer controls section
+            const timerSection = document.createElement('div');
+            timerSection.className = 'section';
+            timerSection.innerHTML = `
+                <button id="startTimer" style="padding: 10px 20px; margin-top: 20px;">Start Timer</button>
+                <h3>Timer Settings</h3>
+                <label>Minutes: <input type="number" id="minutes" min="0" value="1"></label>
+                <label>Seconds: <input type="number" id="seconds" min="0" max="59" value="0"></label>
+                <div style="margin-top: 10px;">
+                    <button style="padding: 10px 20px;" onclick="setTime(5)">5 min</button>
+                    <button style="padding: 10px 20px;" onclick="setTime(10)">10 min</button>
+                    <button style="padding: 10px 20px;" onclick="setTime(20)">20 min</button>
+                </div>
+            `;
+            menu.appendChild(timerSection);
+
+            // Add preset style section
+            const presetSection = document.createElement('div');
+            presetSection.className = 'section';
+            presetSection.innerHTML = `
+                <h3>Particle Style</h3>
+                <select id="presetStyle">
+                    <option value="minimal">Minimal</option>
+                    <option value="neon">Neon</option>
+                    <option value="glitch">Glitch</option>
+                </select>
+            `;
+
+            const saveSection = document.createElement('div');
+            saveSection.className = 'section';
+            saveSection.innerHTML = `
+                <h3>Save Configuration</h3>
+                <label>Configuration Name: <input type="text" id="configName"></label>
+                <button id="saveConfig">Save</button>
+            `;
+
+            menu.appendChild(saveSection);
+            menu.appendChild(presetSection);
+
+            ConfigSchema.generateUI(menu);
+
+            const paddingDiv = document.createElement('div');
+            paddingDiv.style.paddingBottom = '80px';
+            menu.appendChild(paddingDiv);
+        }
+
 
         // Event handlers
         function setupEventListeners() {
@@ -1157,8 +1216,15 @@
 
 
         function optimizedResize() {
-            STATE.render.canvas.width = window.innerWidth;
-            STATE.render.canvas.height = window.innerHeight;
+            const pixelRatio = window.devicePixelRatio || 1;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            STATE.render.canvas.width = width * pixelRatio;
+            STATE.render.canvas.height = height * pixelRatio;
+            STATE.render.canvas.style.width = width + 'px';
+            STATE.render.canvas.style.height = height + 'px';
+
             STATE.render.gl.viewport(0, 0, STATE.render.canvas.width, STATE.render.canvas.height);
             STATE.canvas.aspectRatio = STATE.render.canvas.width / STATE.render.canvas.height;
             STATE.canvas.rect = STATE.render.canvas.getBoundingClientRect();
