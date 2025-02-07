@@ -267,11 +267,11 @@
                     [0.99, 0.54, 0.44]  // #fe8a71
                 ],
                 textSize: 30,
-                textScale: 0.4,
+                textScale: 0.6,
                 textDensity: 1,
                 ordering: "vertical",
                 extraParticleMode: "circle",
-                radius: 0.5
+                radius: 0.8
             }),
 
             glitch: new ParticleConfig({
@@ -727,7 +727,6 @@
             textCanvas.width = textWidth;
             textCanvas.height = textSize;
 
-            // Reset context after canvas resize
             ctx.font = `bold ${textSize}px Arial`;
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
