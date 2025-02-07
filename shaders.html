@@ -54,7 +54,8 @@
 <body>
     <div id="menu"
         style="position: fixed; width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); color: white; padding: 20px 20px 80px 20px; font-family: Arial; z-index: 1000; overflow-y: auto; overflow-x: hidden;">
-
+        <button id="fullscreenButton"
+            style="position: absolute; top: 10px; right: 60px; padding: 10px 20px;">Fullscreen</button>
         <h2>Particle Timer Settings</h2>
 
         <button id="startTimer" style="padding: 10px 20px; margin-top: 20px; ">Start Timer</button>
@@ -373,6 +374,21 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
+
+        document.getElementById('fullscreenButton').addEventListener('click', () => {
+            fetch('https://raw.githubusercontent.com/lexm2/particle-timer/refs/heads/main/shaders.html')
+                .then(response => response.text())
+                .then(html => {
+                    const newTab = window.open('', '_blank');
+                    newTab.document.write(html);
+                    newTab.document.close();
+
+                    newTab.onload = () => {
+                        newTab.focus();
+                        newTab.document.documentElement.requestFullscreen();
+                    };
+                });
+        });
 
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
