@@ -224,11 +224,6 @@
                             opt.textContent = presetName;
                             select.appendChild(opt);
                         });
-                        select.addEventListener('change', (e) => {
-                            const colors = COLOR_PRESETS[e.target.value];
-                            updateColorPickers(colors, container);
-                            STATE.config.particles.appearance.colors = colors;
-                        });
                         container.appendChild(select);
 
                         config.default.forEach(color => {
@@ -500,7 +495,18 @@
                     input.value = value;
                 }
             });
+
+            // Update color preset selector and pickers
+            const colorPresetSelect = document.getElementById('colorPreset');
+            const matchingPreset = Object.entries(COLOR_PRESETS).find(([_, colors]) =>
+                JSON.stringify(colors) === JSON.stringify(preset.particles.appearance.colors)
+            );
+            if (matchingPreset) {
+                colorPresetSelect.value = matchingPreset[0];
+                updateColorPickers(preset.particles.appearance.colors, colorPresetSelect);
+            }
         }
+
 
         function loadPresets() {
             // Load default presets into state
@@ -522,13 +528,13 @@
             });
 
             // Update preset select element
-            const presetSelect = document.getElementById('presetStyle');
-            presetSelect.innerHTML = '';
-            STATE.presets.saved.forEach((_, name) => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                presetSelect.appendChild(option);
+            document.getElementById('presetStyle').addEventListener('change', (e) => {
+                const preset = PRESETS[e.target.value];
+                STATE.config = preset;
+
+                const colorPresetSelect = document.getElementById('colorPreset');
+                const container = colorPresetSelect.parentElement;
+                updateColorPickers(preset.particles.appearance.colors, container);
             });
         }
 
@@ -857,7 +863,7 @@
             if (mouse.down) {
                 const mouseSpeed = Math.sqrt(mouse.velocityX * mouse.velocityX + mouse.velocityY * mouse.velocityY);
                 const pushForce = 2000 * (1 + mouseSpeed * 20);
-                const pushRadius = 200 * (1 + mouseSpeed * 5);
+                const pushRadius = 200;
 
                 const mousePixelX = mouse.x * canvas.width / 2;
                 const mousePixelY = mouse.y * canvas.height / 2;
@@ -884,6 +890,32 @@
                         particles.externalForces[i * 2 + 1] = forceY * forceMagnitude / canvas.height;
                     }
                 }
+            }
+
+            if (STATE.mouse.clicked) {
+                const pushForce = 200;
+                const pushRadius = 100; // In pixels
+
+                const mousePixelX = STATE.mouse.x * canvas.width / 2;
+                const mousePixelY = STATE.mouse.y * canvas.height / 2;
+
+                for (let i = 0; i < particles.count; i++) {
+                    const particleX = particles.arrays.setPoints[i * 2] * canvas.width / 2;
+                    const particleY = particles.arrays.setPoints[i * 2 + 1] * canvas.height / 2;
+
+                    const dx = particleX - mousePixelX;
+                    const dy = particleY - mousePixelY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < pushRadius) {
+                        const force = (1 - distance / pushRadius) * pushForce;
+                        const normalizedDx = dx / canvas.width;
+                        const normalizedDy = dy / canvas.height;
+                        particles.externalForces[i * 2] = normalizedDx * force;
+                        particles.externalForces[i * 2 + 1] = -normalizedDy * force;
+                    }
+                }
+                STATE.mouse.clicked = false;
             }
         }
 
@@ -1166,7 +1198,6 @@
                 <select id="presetStyle">
                     <option value="minimal">Minimal</option>
                     <option value="neon">Neon</option>
-                    <option value="glitch">Glitch</option>
                 </select>
             `;
 
@@ -1222,6 +1253,13 @@
                             newTab.document.documentElement.requestFullscreen();
                         };
                     });
+            });
+
+            document.getElementById('colorPreset').addEventListener('change', (e) => {
+                const colors = COLOR_PRESETS[e.target.value];
+                const container = e.target.parentElement;
+                updateColorPickers(colors, container);
+                STATE.config.particles.appearance.colors = colors;
             });
 
             window.addEventListener('resize', optimizedResize);
