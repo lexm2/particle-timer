@@ -140,6 +140,7 @@
                     <option value="spiral">Spiral</option>
                     <option value="wave">Wave</option>
                     <option value="fountain">Fountain</option>
+                    <option value="test">Test</option>
                 </select>
             </div>
         </div>
@@ -324,6 +325,20 @@
 
         const canvas = document.getElementById('glCanvas');
 
+        let mouseX = 0;
+        let mouseY = 0;
+        let mouseClicked = false;
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
+            mouseY = -((e.clientY - rect.top) / rect.height * 2 - 1);
+        });
+
+        canvas.addEventListener('click', () => {
+            mouseClicked = true;
+        });
+
         const stats = document.createElement('div');
         stats.style.position = 'fixed';
         stats.style.top = '10px';
@@ -342,6 +357,7 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+
         let timerRunning = false;
 
         const gl = canvas.getContext('webgl');
@@ -353,6 +369,7 @@
         let activePointsCount = 0;
         let previousPoints = new Map();
         let particleArrays;
+        let externalForces;
 
         gl.shaderSource(vertexShader, document.getElementById('vertex-shader').textContent);
         gl.shaderSource(fragmentShader, document.getElementById('fragment-shader').textContent);
@@ -464,16 +481,46 @@
 
             const dampingRate = (deltaTime) ** 2;
 
+            //Explosions
+            if (mouseClicked) {
+                const pushForce = 200;
+                const pushRadius = 100; // In pixels
+
+                const mousePixelX = mouseX * canvas.width / 2;
+                const mousePixelY = mouseY * canvas.height / 2;
+
+                for (let i = 0; i < renderCount; i++) {
+                    const particleX = setPoints[i * 2] * canvas.width / 2;
+                    const particleY = setPoints[i * 2 + 1] * canvas.height / 2;
+
+                    const dx = particleX - mousePixelX;
+                    const dy = particleY - mousePixelY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < pushRadius) {
+                        const force = (1 - distance / pushRadius) * pushForce;
+                        const normalizedDx = dx / canvas.width;
+                        const normalizedDy = dy / canvas.height;
+                        externalForces[i * 2] = normalizedDx * force;
+                        externalForces[i * 2 + 1] = -normalizedDy * force;
+                    }
+                }
+                mouseClicked = false;
+            }
             for (let i = 0; i < renderCount; i++) {
                 const dx = setPoints[i * 2] - positions[i * 2];
                 const dy = setPoints[i * 2 + 1] - positions[i * 2 + 1];
 
-                velocities[i * 2] = (velocities[i * 2] * dampings[i] * dampingRate) + (dx * accelerations[i]);
-                velocities[i * 2 + 1] = (velocities[i * 2 + 1] * dampings[i] * dampingRate) + (dy * accelerations[i]);
+                velocities[i * 2] = (velocities[i * 2] * dampings[i] * dampingRate) + (dx * accelerations[i]) + (externalForces[i * 2]);
+                velocities[i * 2 + 1] = (velocities[i * 2 + 1] * dampings[i] * dampingRate) + (dy * accelerations[i]) + (externalForces[i * 2 + 1]);
 
 
                 positions[i * 2] += velocities[i * 2] * (deltaTime);
                 positions[i * 2 + 1] += velocities[i * 2 + 1] * (deltaTime);
+
+                // Decay external forces
+                externalForces[i * 2] = decayForce(externalForces[i * 2], deltaTime);
+                externalForces[i * 2 + 1] = decayForce(externalForces[i * 2 + 1], deltaTime);
             }
 
             frameCount++;
@@ -503,6 +550,13 @@
             else {
                 setTimeout(requestAnimationFrame(draw), 1);
             }
+        }
+
+        function decayForce(force, deltaTime) {
+            if (Math.abs(force) > 0.01) {
+                return force * Math.exp(-deltaTime * 5);
+            }
+            return 0;
         }
 
         const PARTICLE_MODES = {
@@ -576,6 +630,17 @@
                         points.push({
                             x: (Math.random() * 2 - 1) * CONFIG.behavior.radius * 0.5,
                             y: fountainBase
+                        });
+                    }
+                }
+            },
+            test: {
+                renderExtras: true,
+                init: (points, remainingPoints) => {
+                    for (let i = 0; i < remainingPoints; i++) {
+                        points.push({
+                            x: -1,
+                            y: 1
                         });
                     }
                 }
@@ -927,6 +992,7 @@
 
             numParticles = maxPoints;
             particleArrays = createParticleArrays(numParticles);
+            externalForces = new Float32Array(numParticles * 2);
             initializeParticles(particleArrays, 0, numParticles);
             updateBuffers(particleArrays);
         }
@@ -954,7 +1020,6 @@
                         console.warn('Error parsing cookie:', e);
                     }
                 }
-
             });
         }
 
