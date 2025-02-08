@@ -142,8 +142,9 @@
                 text: {
                     size: { type: 'number', min: 100, max: 400, default: 30 },
                     scale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.6 },
-                    endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 1.0 },
-                    density: { type: 'number', min: 1, max: 5, default: 1 }
+                    endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.4 },
+                    density: { type: 'number', min: 1, max: 5, default: 1 },
+                    endText: { type: 'string', default: 'Time\'s up!' },
                 },
                 behavior: {
                     ordering: {
@@ -255,6 +256,16 @@
                         });
                         select.value = config.default;
                         return select;
+                    case 'string':
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.value = config.default;
+                        return input;
+                    case 'boolean':
+                        input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.checked = config.default;
+                        return input;
                 }
             }
         };
@@ -546,7 +557,7 @@
             // Calculate maximum required particles based on time format
             const maxPoints = Math.max(
                 getTextPoints(findLargestAreaTime(minutes, seconds), false).realPointsLength,
-                getTextPoints("Time's up!", false).realPointsLength
+                getTextPoints(STATE.config.text.endText, false).realPointsLength
             );
 
             // Update particle count in state
@@ -1060,33 +1071,41 @@
             const deltaTime = Math.min(currentTime - STATE.timer.lastTime, 0.1);
             STATE.timer.lastTime = currentTime;
 
+            const BATCH_SIZE = 1000;
             const particles = STATE.particles;
             const arrays = particles.arrays;
             const dampingRate = deltaTime * deltaTime;
 
-            applyForces(deltaTime);
+            for (let start = 0; start < particles.count; start += BATCH_SIZE) {
+                const end = Math.min(start + BATCH_SIZE, particles.count);
+                processParticleBatch(start, end, arrays, dampingRate, deltaTime);
+            }
 
-            for (let i = 0; i < particles.count; i++) {
+            applyForces(deltaTime);
+            updateBuffers(arrays);
+            render();
+            requestAnimationFrame(draw);
+        }
+
+        function processParticleBatch(start, end, arrays, dampingRate, deltaTime) {
+            for (let i = start; i < end; i++) {
                 const idx = i * 2;
                 const dx = arrays.setPoints[idx] - arrays.positions[idx];
                 const dy = arrays.setPoints[idx + 1] - arrays.positions[idx + 1];
 
                 arrays.velocities[idx] = arrays.velocities[idx] * arrays.dampings[i] * dampingRate +
-                    dx * arrays.accelerations[i] + particles.externalForces[idx];
+                    dx * arrays.accelerations[i] + STATE.particles.externalForces[idx];
                 arrays.velocities[idx + 1] = arrays.velocities[idx + 1] * arrays.dampings[i] * dampingRate +
-                    dy * arrays.accelerations[i] + particles.externalForces[idx + 1];
+                    dy * arrays.accelerations[i] + STATE.particles.externalForces[idx + 1];
 
                 arrays.positions[idx] += arrays.velocities[idx] * deltaTime;
                 arrays.positions[idx + 1] += arrays.velocities[idx + 1] * deltaTime;
 
-                particles.externalForces[idx] = decayForce(particles.externalForces[idx], deltaTime);
-                particles.externalForces[idx + 1] = decayForce(particles.externalForces[idx + 1], deltaTime);
+                STATE.particles.externalForces[idx] = decayForce(STATE.particles.externalForces[idx], deltaTime);
+                STATE.particles.externalForces[idx + 1] = decayForce(STATE.particles.externalForces[idx + 1], deltaTime);
             }
-
-            updateBuffers(arrays);
-            render();
-            requestAnimationFrame(draw);
         }
+
 
         function render() {
             const gl = STATE.render.gl;
@@ -1095,7 +1114,7 @@
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, STATE.render.buffers.position);
-            gl.bufferData(gl.ARRAY_BUFFER, STATE.particles.arrays.positions, gl.DYNAMIC_DRAW);
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, STATE.particles.arrays.positions);
 
             const renderCount = PARTICLE_MODES[STATE.config.behavior.extraParticleMode]?.renderExtras
                 ? STATE.particles.count
@@ -1121,7 +1140,7 @@
 
                 if (this.msLeft < 1000) {
                     document.getElementById('timerComplete').play();
-                    this.text = "Time's up!";
+                    this.text = STATE.config.text.endText;
                 } else {
                     const time = new Date(this.msLeft);
                     const mins = time.getUTCMinutes();
