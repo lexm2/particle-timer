@@ -67,7 +67,7 @@
         attribute vec3 a_color;
         attribute float a_size;
         varying vec3 v_color;
-
+    
         void main() {
             gl_Position = vec4(a_position, 0.0, 1.0);
             gl_PointSize = a_size;
@@ -78,14 +78,25 @@
     <script type="x-shader/x-fragment" id="fragment-shader">
         precision mediump float;
         varying vec3 v_color;
-
+        uniform float u_glow_intensity;
+    
         void main() {
-            vec2 center = gl_PointCoord - vec2(0.5);
-            float dist = length(center);
-            float alpha = 1.0 - smoothstep(0.1, 0.15, dist);
+            vec2 coord = gl_PointCoord * 2.0 - 1.0;
+            float dist = length(coord);
+            
+            float core = 1.0 - step(0.5, dist);
+            
+            float glow = u_glow_intensity > 0.0 ? 
+                u_glow_intensity * exp(-dist * 2.0) * (1.0 - dist) : 
+                0.0;
+            
+            float alpha = core + glow;
             gl_FragColor = vec4(v_color, alpha);
         }
     </script>
+
+
+
 
     <script>
         const COLOR_PRESETS = {
@@ -138,14 +149,13 @@
                             default: COLOR_PRESETS.oceanBreeze
                         },
                         glow: {
-                            enabled: { type: 'boolean', default: false },
-                            intensity: { type: 'number', min: 0.1, max: 2.0, step: 0.1, default: 0.5 }
+                            intensity: { type: 'number', min: 0.1, max: 2.0, step: 0.1, default: 0 }
                         }
                     },
                     mouseBehavior: {
                         pushForce: { type: 'number', min: 0, max: 5000, default: 2000 },
                         pushRadius: { type: 'number', min: 0, max: 500, default: 200 }
-                    }
+                    },
                 },
                 text: {
                     size: { type: 'number', min: 100, max: 400, default: 30 },
@@ -291,84 +301,12 @@
             });
         }
 
-
-
-
         // Core state management
         const STATE = {
             config: null,
             presets: {
                 current: null,
                 saved: new Map(),
-                default: {
-                    minimal: {
-                        positionMin: -0.7,
-                        positionSpread: 1.2,
-                        accelerationBase: 3,
-                        accelerationVariation: 3,
-                        dampingBase: 0.95,
-                        dampingVariation: 0.04,
-                        sizeBase: 15,
-                        sizeVariation: 75,
-                        colors: [
-                            [0.29, 0.31, 0.30],
-                            [0.05, 0.60, 0.65],
-                            [0.24, 0.64, 0.67],
-                            [0.96, 0.80, 0.38],
-                            [0.99, 0.54, 0.44]
-                        ],
-                        textSize: 30,
-                        textScale: 0.6,
-                        textDensity: 1,
-                        ordering: "vertical",
-                        extraParticleMode: "circle",
-                        radius: 0.8
-                    },
-                    neon: {
-                        positionMin: -0.9,
-                        positionSpread: 1.8,
-                        accelerationBase: 5,
-                        accelerationVariation: 5.0,
-                        dampingBase: 0.99,
-                        dampingVariation: 0.005,
-                        sizeBase: 4,
-                        sizeVariation: 2.0,
-                        colors: [
-                            [1.0, 0.0, 1.0],
-                            [0.0, 1.0, 1.0],
-                            [1.0, 1.0, 0.0]
-                        ],
-                        textSize: 280,
-                        textScale: 1,
-                        textDensity: 2,
-                        ordering: "vertical",
-                        extraParticleMode: "maintain",
-                        radius: 2
-                    },
-                    glitch: {
-                        positionMin: -0.9,
-                        positionSpread: 1.8,
-                        accelerationBase: 10,
-                        accelerationVariation: 0.0,
-                        dampingBase: 0.90,
-                        dampingVariation: 0.0,
-                        sizeBase: 3,
-                        sizeVariation: 0.0,
-                        colors: [
-                            [0.95, 0.61, 0.73],
-                            [0.56, 0.93, 0.56],
-                            [0.68, 0.85, 0.90],
-                            [0.97, 0.85, 0.45],
-                            [0.85, 0.75, 0.95]
-                        ],
-                        textSize: 240,
-                        textScale: 1,
-                        textDensity: 1,
-                        ordering: "horizontal",
-                        extraParticleMode: "center",
-                        radius: 1.5
-                    }
-                }
             },
             mouse: {
                 x: 0,
@@ -413,6 +351,9 @@
             canvas: {
                 rect: null,
                 aspectRatio: 1
+            },
+            menu: {
+                visible: true
             }
         };
 
@@ -435,11 +376,17 @@
                     },
                     appearance: {
                         size: {
-                            base: 15,
-                            variation: 75
+                            base: 5,
+                            variation: 10
                         },
-                        colors: COLOR_PRESETS.oceanBreeze
-                    }
+                        colors: COLOR_PRESETS.oceanBreeze,
+                        glow: {
+                            intensity: 0.3
+                        }
+                    },
+                    mouseBehavior: {
+                        pushForce: 1500,
+                    },
                 },
                 text: {
                     size: 30,
@@ -471,11 +418,18 @@
                     },
                     appearance: {
                         size: {
-                            base: 4,
+                            base: 1,
                             variation: 2.0
                         },
-                        colors: COLOR_PRESETS.neonLights
-                    }
+                        colors: COLOR_PRESETS.neonLights,
+
+                        glow: {
+                            intensity: 1
+                        }
+                    },
+                    mouseBehavior: {
+                        pushForce: 1000,
+                    },
                 },
                 text: {
                     size: 280,
@@ -498,12 +452,10 @@
 
             STATE.config = preset;
 
-            // Update UI based on schema paths
             document.querySelectorAll('[data-config-path]').forEach(input => {
                 const path = input.dataset.configPath.split('.');
                 let value = preset;
 
-                // Navigate to the correct value in preset
                 for (const key of path) {
                     value = value[key];
                 }
@@ -671,12 +623,18 @@
             const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER,
                 document.getElementById('fragment-shader').textContent);
 
-            // Create program
-            STATE.render.program = gl.createProgram();
-            gl.attachShader(STATE.render.program, vertexShader);
-            gl.attachShader(STATE.render.program, fragmentShader);
-            gl.linkProgram(STATE.render.program);
-            gl.useProgram(STATE.render.program);
+            // Create and link program
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            gl.useProgram(program);
+
+            STATE.render.program = program;
+            STATE.render.uniforms = {
+                glowIntensity: gl.getUniformLocation(program, 'u_glow_intensity')
+            };
+            STATE.render.uniforms.resolution = gl.getUniformLocation(program, 'u_resolution')
 
             // Initialize buffers
             STATE.render.buffers.position = gl.createBuffer();
@@ -684,9 +642,9 @@
             STATE.render.buffers.color = gl.createBuffer();
 
             // Cache attribute locations
-            STATE.render.attributes.position = gl.getAttribLocation(STATE.render.program, 'a_position');
-            STATE.render.attributes.size = gl.getAttribLocation(STATE.render.program, 'a_size');
-            STATE.render.attributes.color = gl.getAttribLocation(STATE.render.program, 'a_color');
+            STATE.render.attributes.position = gl.getAttribLocation(program, 'a_position');
+            STATE.render.attributes.size = gl.getAttribLocation(program, 'a_size');
+            STATE.render.attributes.color = gl.getAttribLocation(program, 'a_color');
 
             // Enable attributes
             gl.enableVertexAttribArray(STATE.render.attributes.position);
@@ -707,6 +665,7 @@
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
+
 
         // Optimized particle array creation
         function createParticleArrays(count) {
@@ -1143,11 +1102,15 @@
         function render() {
             const gl = STATE.render.gl;
 
+            gl.uniform2f(STATE.render.uniforms.resolution, gl.canvas.width, gl.canvas.height);
+            gl.uniform1i(STATE.render.uniforms.glowEnabled, STATE.config.particles.appearance.glow.enabled ? 1 : 0);
+            gl.uniform1f(STATE.render.uniforms.glowIntensity, STATE.config.particles.appearance.glow.intensity);
+
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, STATE.render.buffers.position);
-            gl.bufferSubData(gl.ARRAY_BUFFER, 0, STATE.particles.arrays.positions);
+            gl.bufferData(gl.ARRAY_BUFFER, STATE.particles.arrays.positions, gl.DYNAMIC_DRAW);
 
             const renderCount = PARTICLE_MODES[STATE.config.behavior.extraParticleMode]?.renderExtras
                 ? STATE.particles.count
@@ -1278,6 +1241,7 @@
 
             document.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
+                STATE.menu.visible = true;
                 document.getElementById('menu').style.display = 'block';
             });
 
@@ -1290,7 +1254,15 @@
                 document.getElementById('menu').style.display = 'none';
 
                 STATE.timer.running = true;
+                STATE.menu.visible = false;
                 requestAnimationFrame(draw);
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    STATE.menu.visible = false;
+                    document.getElementById('menu').style.display = 'none';
+                }
             });
 
             document.getElementById('fullscreenButton').addEventListener('click', () => {
@@ -1316,10 +1288,18 @@
 
             window.addEventListener('resize', optimizedResize);
 
-            canvas.addEventListener('mousedown', () => STATE.mouse.down = true);
+            canvas.addEventListener('mousedown', (e) => {
+                if (STATE.menu.visible) return;
+                STATE.mouse.down = true;
+            });
 
-            canvas.addEventListener('mouseup', () => STATE.mouse.down = false);
+            canvas.addEventListener('mouseup', (e) => {
+                if (STATE.menu.visible) return;
+                STATE.mouse.down = false;
+            });
+
             canvas.addEventListener('mousemove', (e) => {
+                if (STATE.menu.visible) return;
                 const newMouseX = (e.clientX - STATE.canvas.rect.left) / STATE.canvas.rect.width * 2 - 1;
                 const newMouseY = -((e.clientY - STATE.canvas.rect.top) / STATE.canvas.rect.height * 2 - 1);
 
@@ -1331,7 +1311,11 @@
                 STATE.mouse.x = newMouseX;
                 STATE.mouse.y = newMouseY;
             });
-            canvas.addEventListener('click', () => STATE.mouse.clicked = true);
+
+            canvas.addEventListener('click', (e) => {
+                if (STATE.menu.visible) return;
+                STATE.mouse.clicked = true;
+            });
 
             document.getElementById('presetStyle').addEventListener('change', (e) => {
                 applyPreset(e.target.value);
