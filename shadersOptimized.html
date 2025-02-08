@@ -1067,42 +1067,67 @@
         function draw(currentTime) {
             if (!STATE.timer.running) return;
 
+            const drawStart = performance.now();
             currentTime *= 0.001;
             const deltaTime = Math.min(currentTime - STATE.timer.lastTime, 0.1);
             STATE.timer.lastTime = currentTime;
 
+            const physicsStart = performance.now();
             const BATCH_SIZE = 1000;
             const particles = STATE.particles;
             const arrays = particles.arrays;
             const dampingRate = deltaTime * deltaTime;
+
+            applyForces(deltaTime);
 
             for (let start = 0; start < particles.count; start += BATCH_SIZE) {
                 const end = Math.min(start + BATCH_SIZE, particles.count);
                 processParticleBatch(start, end, arrays, dampingRate, deltaTime);
             }
 
-            applyForces(deltaTime);
+            STATE.stats.physicsTime = performance.now() - physicsStart;
+
             updateBuffers(arrays);
             render();
+
+            STATE.stats.drawTime = performance.now() - drawStart;
+            STATE.stats.frameCount++;
+
+            if (currentTime - STATE.stats.lastFpsTime >= 1.0) {
+                STATE.stats.fps = STATE.stats.frameCount;
+                STATE.stats.frameCount = 0;
+                STATE.stats.lastFpsTime = currentTime;
+                STATE.stats.particleCount = particles.count;
+
+                // Update stats display
+                STATE.stats.element.textContent = `
+            FPS: ${STATE.stats.fps}
+            Particles: ${STATE.stats.particleCount}
+            Draw Time: ${STATE.stats.drawTime.toFixed(2)}ms
+            Physics Time: ${STATE.stats.physicsTime.toFixed(2)}ms
+        `;
+            }
+
             requestAnimationFrame(draw);
         }
 
         function processParticleBatch(start, end, arrays, dampingRate, deltaTime) {
+            const particles = STATE.particles;
             for (let i = start; i < end; i++) {
                 const idx = i * 2;
                 const dx = arrays.setPoints[idx] - arrays.positions[idx];
                 const dy = arrays.setPoints[idx + 1] - arrays.positions[idx + 1];
 
                 arrays.velocities[idx] = arrays.velocities[idx] * arrays.dampings[i] * dampingRate +
-                    dx * arrays.accelerations[i] + STATE.particles.externalForces[idx];
+                    dx * arrays.accelerations[i] + particles.externalForces[idx];
                 arrays.velocities[idx + 1] = arrays.velocities[idx + 1] * arrays.dampings[i] * dampingRate +
-                    dy * arrays.accelerations[i] + STATE.particles.externalForces[idx + 1];
+                    dy * arrays.accelerations[i] + particles.externalForces[idx + 1];
 
                 arrays.positions[idx] += arrays.velocities[idx] * deltaTime;
                 arrays.positions[idx + 1] += arrays.velocities[idx + 1] * deltaTime;
 
-                STATE.particles.externalForces[idx] = decayForce(STATE.particles.externalForces[idx], deltaTime);
-                STATE.particles.externalForces[idx + 1] = decayForce(STATE.particles.externalForces[idx + 1], deltaTime);
+                particles.externalForces[idx] = decayForce(particles.externalForces[idx], deltaTime);
+                particles.externalForces[idx + 1] = decayForce(particles.externalForces[idx + 1], deltaTime);
             }
         }
 
@@ -1180,12 +1205,12 @@
             STATE.stats.element = document.createElement('div');
             Object.assign(STATE.stats.element.style, {
                 position: 'fixed',
-                top: '10px',
-                left: '10px',
-                color: 'white',
-                fontFamily: 'monospace',
-                fontSize: '16px',
-                zIndex: '100'
+                width: '100vw',
+                height: '100vh',
+                margin: '0',
+                padding: '20px',
+                zIndex: '100',
+                overflow: 'hidden'
             });
             document.body.appendChild(STATE.stats.element);
         }
@@ -1284,6 +1309,7 @@
             window.addEventListener('resize', optimizedResize);
 
             canvas.addEventListener('mousedown', () => STATE.mouse.down = true);
+
             canvas.addEventListener('mouseup', () => STATE.mouse.down = false);
             canvas.addEventListener('mousemove', (e) => {
                 const newMouseX = (e.clientX - STATE.canvas.rect.left) / STATE.canvas.rect.width * 2 - 1;
