@@ -136,7 +136,15 @@
                             type: 'colorArray',
                             presets: COLOR_PRESETS,
                             default: COLOR_PRESETS.oceanBreeze
+                        },
+                        glow: {
+                            enabled: { type: 'boolean', default: false },
+                            intensity: { type: 'number', min: 0.1, max: 2.0, step: 0.1, default: 0.5 }
                         }
+                    },
+                    mouseBehavior: {
+                        pushForce: { type: 'number', min: 0, max: 5000, default: 2000 },
+                        pushRadius: { type: 'number', min: 0, max: 500, default: 200 }
                     }
                 },
                 text: {
@@ -873,15 +881,15 @@
 
             if (mouse.down) {
                 const mouseSpeed = Math.sqrt(mouse.velocityX * mouse.velocityX + mouse.velocityY * mouse.velocityY);
-                const pushForce = 2000 * (1 + mouseSpeed * 20);
-                const pushRadius = 200;
+                const pushForce = STATE.config.particles.mouseBehavior.pushForce * (mouseSpeed * 10);
+                const pushRadius = STATE.config.particles.mouseBehavior.pushRadius;
 
                 const mousePixelX = mouse.x * canvas.width / 2;
                 const mousePixelY = mouse.y * canvas.height / 2;
 
                 for (let i = 0; i < particles.count; i++) {
-                    const particleX = particles.arrays.setPoints[i * 2] * canvas.width / 2;
-                    const particleY = particles.arrays.setPoints[i * 2 + 1] * canvas.height / 2;
+                    const particleX = particles.arrays.positions[i * 2] * canvas.width / 2;
+                    const particleY = particles.arrays.positions[i * 2 + 1] * canvas.height / 2;
 
                     const dx = particleX - mousePixelX;
                     const dy = particleY - mousePixelY;
@@ -904,15 +912,15 @@
             }
 
             if (STATE.mouse.clicked) {
-                const pushForce = 200;
-                const pushRadius = 100; // In pixels
+                const pushForce = STATE.config.particles.mouseBehavior.pushForce;
+                const pushRadius = STATE.config.particles.mouseBehavior.pushRadius; // In pixels
 
                 const mousePixelX = STATE.mouse.x * canvas.width / 2;
                 const mousePixelY = STATE.mouse.y * canvas.height / 2;
 
                 for (let i = 0; i < particles.count; i++) {
-                    const particleX = particles.arrays.setPoints[i * 2] * canvas.width / 2;
-                    const particleY = particles.arrays.setPoints[i * 2 + 1] * canvas.height / 2;
+                    const particleX = particles.arrays.positions[i * 2] * canvas.width / 2;
+                    const particleY = particles.arrays.positions[i * 2 + 1] * canvas.height / 2;
 
                     const dx = particleX - mousePixelX;
                     const dy = particleY - mousePixelY;
