@@ -1164,6 +1164,19 @@
             }
         };
 
+        function setTime(minutes) {
+            document.getElementById('minutes').value = minutes;
+            document.getElementById('seconds').value = 0;
+
+            initializeWithConfig(getConfigFromInputs(), minutes, 0);
+            TIMER.start(minutes, 0);
+            
+            STATE.menu.visible = false;
+            document.getElementById('menu').style.display = 'none';
+            STATE.timer.running = true;
+            requestAnimationFrame(draw);
+        }
+
 
         // Optimized initialization
         function init() {
