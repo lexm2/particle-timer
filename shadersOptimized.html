@@ -79,6 +79,7 @@
         precision mediump float;
         varying vec3 v_color;
         uniform float u_glow_intensity;
+        uniform float u_glow_size;
     
         void main() {
             vec2 coord = gl_PointCoord * 2.0 - 1.0;
@@ -87,7 +88,7 @@
             float core = 1.0 - step(0.5, dist);
             
             float glow = u_glow_intensity > 0.0 ? 
-                u_glow_intensity * exp(-dist * 2.0) * (1.0 - dist) : 
+                u_glow_intensity * exp(-dist * (1.0 / u_glow_size)) * (1.0 - dist) : 
                 0.0;
             
             float alpha = core + glow;
@@ -149,7 +150,8 @@
                             default: COLOR_PRESETS.oceanBreeze
                         },
                         glow: {
-                            intensity: { type: 'number', min: 0.1, max: 2.0, step: 0.1, default: 0 }
+                            intensity: { type: 'number', min: 0.1, max: 10, step: 0.1, default: 0 },
+                            size: { type: 'number', min: 0.1, max: 10, step: 0.1, default: 2.0 }
                         }
                     },
                     mouseBehavior: {
@@ -381,7 +383,8 @@
                         },
                         colors: COLOR_PRESETS.oceanBreeze,
                         glow: {
-                            intensity: 0.3
+                            intensity: 0.3,
+                            size: 1.5
                         }
                     },
                     mouseBehavior: {
@@ -425,7 +428,8 @@
                         colors: COLOR_PRESETS.neonLights,
 
                         glow: {
-                            intensity: 1
+                            intensity: 1,
+                            size: 1.5
                         }
                     },
                     mouseBehavior: {
@@ -637,6 +641,7 @@
                 glowIntensity: gl.getUniformLocation(program, 'u_glow_intensity')
             };
             STATE.render.uniforms.resolution = gl.getUniformLocation(program, 'u_resolution')
+            STATE.render.uniforms.glowSize = gl.getUniformLocation(program, 'u_glow_size');
 
             // Initialize buffers
             STATE.render.buffers.position = gl.createBuffer();
@@ -1105,8 +1110,9 @@
             const gl = STATE.render.gl;
 
             gl.uniform2f(STATE.render.uniforms.resolution, gl.canvas.width, gl.canvas.height);
-            gl.uniform1i(STATE.render.uniforms.glowEnabled, STATE.config.particles.appearance.glow.enabled ? 1 : 0);
+
             gl.uniform1f(STATE.render.uniforms.glowIntensity, STATE.config.particles.appearance.glow.intensity);
+            gl.uniform1f(STATE.render.uniforms.glowSize, STATE.config.particles.appearance.glow.size);
 
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
