@@ -1279,7 +1279,7 @@
             });
 
             document.getElementById('fullscreenButton').addEventListener('click', () => {
-                fetch('https://raw.githubusercontent.com/lexm2/particle-timer/refs/heads/main/shaders.html')
+                fetch('https://cdn.jsdelivr.net/gh/lexm2/particle-timer/shadersOptimized.html')
                     .then(response => response.text())
                     .then(html => {
                         const newTab = window.open('', '_blank');
