@@ -845,14 +845,13 @@
             const particles = STATE.particles;
             const canvas = STATE.render.canvas;
 
+            const mousePixelX = STATE.mouse.x * canvas.width / 2;
+            const mousePixelY = STATE.mouse.y * canvas.height / 2;
+
+            const pushForce = STATE.config.particles.mouseBehavior.pushForce;
+            const pushRadius = STATE.config.particles.mouseBehavior.pushRadius; // In pixels
+            
             if (mouse.down) {
-                const mouseSpeed = Math.sqrt(mouse.velocityX * mouse.velocityX + mouse.velocityY * mouse.velocityY);
-                const pushForce = STATE.config.particles.mouseBehavior.pushForce * (mouseSpeed * 10);
-                const pushRadius = STATE.config.particles.mouseBehavior.pushRadius;
-
-                const mousePixelX = mouse.x * canvas.width / 2;
-                const mousePixelY = mouse.y * canvas.height / 2;
-
                 for (let i = 0; i < particles.count; i++) {
                     const particleX = particles.arrays.positions[i * 2] * canvas.width / 2;
                     const particleY = particles.arrays.positions[i * 2 + 1] * canvas.height / 2;
@@ -864,13 +863,12 @@
                     if (distance < pushRadius) {
                         const normalX = dx / distance;
                         const normalY = dy / distance;
-                        const crossProduct = (normalX * mouse.velocityY - normalY * mouse.velocityX) * 5;
-                        const rotationFactor = Math.pow(1 - distance / pushRadius, 2) * 3;
 
-                        const forceX = (-normalY * crossProduct - dx * rotationFactor) * mouseSpeed;
-                        const forceY = (normalX * crossProduct - dy * rotationFactor) * mouseSpeed;
+                        // Direct outward force
+                        const forceX = normalX * pushForce ** 2;
+                        const forceY = normalY * pushForce ** 2;
 
-                        const forceMagnitude = (1 - distance / pushRadius) * pushForce;
+                        const forceMagnitude = (1 - distance / pushRadius);
                         particles.externalForces[i * 2] = forceX * forceMagnitude / canvas.width;
                         particles.externalForces[i * 2 + 1] = forceY * forceMagnitude / canvas.height;
                     }
@@ -878,12 +876,6 @@
             }
 
             if (STATE.mouse.clicked) {
-                const pushForce = STATE.config.particles.mouseBehavior.pushForce;
-                const pushRadius = STATE.config.particles.mouseBehavior.pushRadius; // In pixels
-
-                const mousePixelX = STATE.mouse.x * canvas.width / 2;
-                const mousePixelY = STATE.mouse.y * canvas.height / 2;
-
                 for (let i = 0; i < particles.count; i++) {
                     const particleX = particles.arrays.positions[i * 2] * canvas.width / 2;
                     const particleY = particles.arrays.positions[i * 2 + 1] * canvas.height / 2;
@@ -1176,7 +1168,7 @@
 
             initializeWithConfig(getConfigFromInputs(), minutes, 0);
             TIMER.start(minutes, 0);
-            
+
             STATE.menu.visible = false;
             document.getElementById('menu').style.display = 'none';
             STATE.timer.running = true;
