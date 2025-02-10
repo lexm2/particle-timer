@@ -774,17 +774,6 @@
                     }
                 }
             },
-            maintain: {
-                renderExtras: false,
-                init: (points, remainingPoints) => {
-                    for (let i = 0; i < remainingPoints; i++) {
-                        points.push({
-                            x: STATE.particles.arrays.positions[(points.length + i) * 2],
-                            y: STATE.particles.arrays.positions[(points.length + i) * 2 + 1]
-                        });
-                    }
-                }
-            },
             spiral: {
                 renderExtras: true,
                 init: (points, remainingPoints) => {
