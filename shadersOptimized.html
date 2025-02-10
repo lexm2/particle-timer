@@ -444,7 +444,7 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "maintain",
+                    extraParticleMode: "center",
                     radius: 2
                 }
             }
@@ -850,7 +850,7 @@
 
             const pushForce = STATE.config.particles.mouseBehavior.pushForce;
             const pushRadius = STATE.config.particles.mouseBehavior.pushRadius; // In pixels
-            
+
             if (mouse.down) {
                 for (let i = 0; i < particles.count; i++) {
                     const particleX = particles.arrays.positions[i * 2] * canvas.width / 2;
@@ -1279,18 +1279,9 @@
             });
 
             document.getElementById('fullscreenButton').addEventListener('click', () => {
-                fetch('https://cdn.jsdelivr.net/gh/lexm2/particle-timer/shadersOptimized.html')
-                    .then(response => response.text())
-                    .then(html => {
-                        const newTab = window.open('', '_blank');
-                        newTab.document.write(html);
-                        newTab.document.close();
-                        newTab.onload = () => {
-                            newTab.focus();
-                            newTab.document.documentElement.requestFullscreen();
-                        };
-                    });
+                window.open('https://htmlpreview.github.io/?https://github.com/lexm2/particle-timer/blob/main/shadersOptimized.html', '_blank');
             });
+
 
             document.getElementById('colorPreset').addEventListener('change', (e) => {
                 const colors = COLOR_PRESETS[e.target.value];
