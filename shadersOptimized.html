@@ -162,9 +162,11 @@
                 text: {
                     size: { type: 'number', min: 100, max: 400, default: 30 },
                     scale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.6 },
+                    verticalOffset : { type: 'number', min: -10, max: 10, step: 0.01, default: 0 },
                     endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.4 },
                     density: { type: 'number', min: 1, max: 5, default: 1 },
                     endText: { type: 'string', default: 'Time\'s up!' },
+                    
                 },
                 behavior: {
                     ordering: {
@@ -611,26 +613,21 @@
 
 
         function initializeWithConfig(newConfig, minutes, seconds) {
-            // Update global config
             Object.assign(STATE.config, newConfig);
 
-            // Calculate maximum required particles based on time format
             const maxPoints = Math.max(
                 getTextPoints(findLargestAreaTime(minutes, seconds), false).realPointsLength,
                 getTextPoints(STATE.config.text.endText, false).realPointsLength
             );
 
-            // Update particle count in state
             STATE.particles.count = maxPoints;
             STATE.particles.arrays = createParticleArrays(maxPoints);
             STATE.particles.externalForces = new Float32Array(maxPoints * 2);
 
-            // Initialize particle arrays
             initializeParticles(STATE.particles.arrays, 0, maxPoints);
             updateBuffers(STATE.particles.arrays);
         }
 
-        // Helper function to find time format requiring most particles
         function findLargestAreaTime(minutes, seconds) {
             const digitScores = {};
             for (let i = 0; i <= 9; i++) {
@@ -1014,32 +1011,61 @@
             const textCanvas = document.createElement('canvas');
             const ctx = textCanvas.getContext('2d');
 
-            ctx.font = `bold ${textSize}px Arial`;
-
-            const textMetrics = ctx.measureText(text);
-            const textWidth = textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
-            const padding = textMetrics.actualBoundingBoxLeft;
-
-            const defaultMetric = ctx.measureText("0:00");
+            // Use a monospace font to ensure consistent character widths
+            ctx.font = `bold ${textSize}px "Courier New", monospace`;
 
             const isTimeFormat = /^\d+:\d+$/.test(text);
-            const referenceWidth = isTimeFormat ? textWidth : defaultMetric.actualBoundingBoxLeft + defaultMetric.actualBoundingBoxRight;
-
-            const dynamicScale = isTimeFormat ?
-                textScale * (textWidth / referenceWidth) :
-                STATE.config.text.endTextScale * (textWidth / referenceWidth);
-
-            textCanvas.width = textWidth + Math.abs(padding * 2);
-            textCanvas.height = textSize;
-
-            ctx.font = `bold ${textSize}px Arial`;
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+            
+            if (isTimeFormat) {
+                // Create a fixed-width canvas based on the maximum possible width
+                const maxWidthMetrics = ctx.measureText("9:99");
+                const maxWidth = maxWidthMetrics.actualBoundingBoxLeft + maxWidthMetrics.actualBoundingBoxRight;
+                const padding = maxWidthMetrics.actualBoundingBoxLeft;
+                
+                // For vertical centering, ensure canvas height is adequate
+                // Get metrics to determine the actual height of the text
+                const heightMetrics = ctx.measureText('0');
+                const textHeight = heightMetrics.actualBoundingBoxAscent + heightMetrics.actualBoundingBoxDescent;
+                const verticalPadding = textSize * 0.25; // Add some padding
+                
+                // Set fixed canvas dimensions with appropriate height
+                textCanvas.width = maxWidth + Math.abs(padding * 2);
+                textCanvas.height = textHeight + verticalPadding * 2;
+                
+                // Reset context after canvas resize
+                ctx.font = `bold ${textSize}px "Courier New", monospace`;
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // Position text at the center of the canvas
+                ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+            } else {
+                // For non-time text (like end text)
+                const textMetrics = ctx.measureText(text);
+                const textWidth = textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
+                const padding = textMetrics.actualBoundingBoxLeft;
+                
+                // Get text height for proper vertical sizing
+                const heightMetrics = ctx.measureText(text);
+                const textHeight = heightMetrics.actualBoundingBoxAscent + heightMetrics.actualBoundingBoxDescent;
+                const verticalPadding = textSize * 0.25;
+                
+                textCanvas.width = textWidth + Math.abs(padding * 2);
+                textCanvas.height = textHeight + verticalPadding * 2;
+                
+                // Reset context after canvas resize
+                ctx.font = `bold ${textSize}px "Courier New", monospace`;
+                ctx.fillStyle = 'white';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+            }
 
             const points = [];
             const imageData = ctx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
+
+            const verticalOffset = STATE.config.text.verticalOffset;
 
             switch (STATE.config.behavior.ordering) {
                 case 'vertical':
@@ -1047,8 +1073,8 @@
                         for (let y = 0; y < textCanvas.height; y += density) {
                             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * dynamicScale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * textScale
+                                    x: ((x / textCanvas.width) * 2 - 1) * textScale,
+                                    y: ((-(y / textCanvas.height) * 2 + 1) * textScale) + verticalOffset
                                 });
                             }
                         }
@@ -1060,8 +1086,8 @@
                         for (let x = 0; x < textCanvas.width; x += density) {
                             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * dynamicScale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * textScale
+                                    x: ((x / textCanvas.width) * 2 - 1) * textScale,
+                                    y: ((-(y / textCanvas.height) * 2 + 1) * textScale) + verticalOffset
                                 });
                             }
                         }
@@ -1074,8 +1100,8 @@
                         for (let y = 0; y < textCanvas.height; y += density) {
                             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
                                 validPixels.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * dynamicScale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * textScale
+                                    x: ((x / textCanvas.width) * 2 - 1) * textScale,
+                                    y: ((-(y / textCanvas.height) * 2 + 1) * textScale) + verticalOffset
                                 });
                             }
                         }
@@ -1110,6 +1136,7 @@
 
             return points;
         }
+
 
 
         // Optimized rendering loop
