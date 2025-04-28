@@ -453,37 +453,121 @@
 
 
         function applyPreset(presetName) {
-            const preset = PRESETS[presetName];
-            if (!preset) return;
+            let preset = PRESETS[presetName];
 
-            STATE.config = preset;
+            if (!preset && STATE.presets.saved.has(presetName)) {
+                preset = STATE.presets.saved.get(presetName);
+            }
 
+            // If still no preset found, return
+            if (!preset) {
+                console.warn(`No preset found with name: ${presetName}`);
+                return;
+            }
+
+            console.log(`Applying preset: ${presetName}`, preset);
+
+            // Set the current config to the selected preset
+            STATE.config = Object.assign({}, preset);
+
+            // Update all UI elements with the preset values
             document.querySelectorAll('[data-config-path]').forEach(input => {
                 const path = input.dataset.configPath.split('.');
                 let value = preset;
 
+                // Navigate down the object path
                 for (const key of path) {
+                    if (value === undefined || value === null) {
+                        console.warn(`Invalid path for ${input.dataset.configPath}, missing: ${key}`);
+                        return;
+                    }
                     value = value[key];
                 }
 
+                if (value === undefined || value === null) {
+                    console.warn(`No value found for path: ${input.dataset.configPath}`);
+                    return;
+                }
+
+                // Special handling for color inputs
                 if (input.type === 'color') {
                     input.value = rgbToHex(value);
+                } else if (input.type === 'select-one') {
+                    input.value = value;
+                } else if (input.type === 'number') {
+                    input.value = value;
+                } else if (input.className === 'particleColor') {
+                    // Skip individual color pickers as they'll be handled below
                 } else {
                     input.value = value;
                 }
             });
 
-            // Update color preset selector and pickers
             const colorPresetSelect = document.getElementById('colorPreset');
-            const matchingPreset = Object.entries(COLOR_PRESETS).find(([_, colors]) =>
-                JSON.stringify(colors) === JSON.stringify(preset.particles.appearance.colors)
-            );
-            if (matchingPreset) {
-                colorPresetSelect.value = matchingPreset[0];
-                updateColorPickers(preset.particles.appearance.colors, colorPresetSelect);
+            if (preset.particles && preset.particles.appearance && preset.particles.appearance.colors) {
+                const colors = preset.particles.appearance.colors;
+                const container = colorPresetSelect.parentElement;
+
+                // Try to find if this matches a built-in color preset
+                const matchingPreset = Object.entries(COLOR_PRESETS).find(([_, presetColors]) =>
+                    JSON.stringify(presetColors) === JSON.stringify(colors)
+                );
+
+                if (matchingPreset) {
+                    colorPresetSelect.value = matchingPreset[0];
+                }
+
+                // Update the actual color pickers
+                updateColorPickers(colors, container);
             }
+
+            console.log("Preset applied successfully");
         }
 
+        function rgbToHex(rgbArray) {
+            if (!Array.isArray(rgbArray) || rgbArray.length < 3) {
+                console.warn("Invalid RGB array:", rgbArray);
+                return "#FFFFFF";
+            }
+
+            return '#' + rgbArray.map(component => {
+                const hex = Math.round(component * 255).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        const StorageUtils = {
+            set: function (name, value) {
+                try {
+                    const serialized = JSON.stringify(value);
+                    localStorage.setItem(name, serialized);
+                    return true;
+                } catch (e) {
+                    console.error('Error saving to localStorage:', e);
+                    return false;
+                }
+            },
+
+            get: function (name) {
+                try {
+                    const serialized = localStorage.getItem(name);
+                    if (serialized === null) return null;
+                    return JSON.parse(serialized);
+                } catch (e) {
+                    console.error('Error retrieving from localStorage:', e);
+                    return null;
+                }
+            },
+
+            delete: function (name) {
+                localStorage.removeItem(name);
+            },
+
+            getAllKeys: function () {
+                return Object.keys(localStorage).filter(key =>
+                    key.startsWith('particle_timer_preset_'));
+            }
+        };
 
         function loadPresets() {
             // Load default presets into state
@@ -491,28 +575,38 @@
                 STATE.presets.saved.set(name, config);
             });
 
-            // Load saved presets from cookies
-            document.cookie.split(';').forEach(cookie => {
-                const [name, value] = cookie.trim().split('=');
-                if (name) {
-                    try {
-                        const config = JSON.parse(value);
-                        STATE.presets.saved.set(name, config);
-                    } catch (e) {
-                        console.warn('Invalid preset in cookie:', name);
+            console.log('Loading saved presets...');
+
+            // Get all preset keys from localStorage
+            const presetKeys = StorageUtils.getAllKeys();
+
+            presetKeys.forEach(fullKey => {
+                try {
+                    const config = StorageUtils.get(fullKey);
+                    if (!config) return;
+
+                    // Remove the prefix to get the actual name
+                    const name = fullKey.replace('particle_timer_preset_', '');
+
+                    STATE.presets.saved.set(name, config);
+
+                    // Add to preset selector if it doesn't exist
+                    const presetSelect = document.getElementById('presetStyle');
+                    if (presetSelect && !Array.from(presetSelect.options).some(opt => opt.value === name)) {
+                        const opt = document.createElement('option');
+                        opt.value = name;
+                        opt.textContent = name;
+                        presetSelect.appendChild(opt);
+                        console.log(`Added ${name} to preset selector`);
                     }
+
+                    console.log(`Successfully loaded saved preset: ${name}`);
+                } catch (e) {
+                    console.warn('Error loading preset:', fullKey, e);
                 }
             });
 
-            // Update preset select element
-            document.getElementById('presetStyle').addEventListener('change', (e) => {
-                const preset = PRESETS[e.target.value];
-                STATE.config = preset;
-
-                const colorPresetSelect = document.getElementById('colorPreset');
-                const container = colorPresetSelect.parentElement;
-                updateColorPickers(preset.particles.appearance.colors, container);
-            });
+            console.log('Available presets after loading:', Array.from(STATE.presets.saved.keys()));
         }
 
 
@@ -1212,10 +1306,16 @@
             presetSection.className = 'section';
             presetSection.innerHTML = `
                 <h3>Particle Style</h3>
-                <select id="presetStyle">
-                    <option value="minimal">Minimal</option>
-                    <option value="neon">Neon</option>
-                </select>
+                <div style="display: flex; align-items: center; margin-bottom: 10px; max-width: 300px;">
+                    <select id="presetStyle" style="width: auto; min-width: 150px; margin-right: 10px;">
+                        <option value="minimal">Minimal</option>
+                        <option value="neon">Neon</option>
+                    </select>
+                    <button id="deletePreset" style="background: #d44; padding: 5px 10px;">Delete</button>
+                </div>
+                <div id="presetInfo" style="font-size: 0.8em; font-style: italic; margin-bottom: 10px;">
+                    Built-in presets cannot be deleted.
+                </div>
             `;
 
             const saveSection = document.createElement('div');
@@ -1314,14 +1414,53 @@
                 applyPreset(e.target.value);
             });
 
+            document.getElementById('deletePreset').addEventListener('click', () => {
+                const presetSelect = document.getElementById('presetStyle');
+                const selectedPreset = presetSelect.value;
+
+                if (Object.keys(PRESETS).includes(selectedPreset)) {
+                    alert('Cannot delete built-in presets.');
+                    return;
+                }
+
+                if (confirm(`Are you sure you want to delete the preset "${selectedPreset}"?`)) {
+                    localStorage.removeItem('particle_timer_preset_' + selectedPreset);
+
+                    STATE.presets.saved.delete(selectedPreset);
+
+                    for (let i = 0; i < presetSelect.options.length; i++) {
+                        if (presetSelect.options[i].value === selectedPreset) {
+                            presetSelect.remove(i);
+                            break;
+                        }
+                    }
+
+                    presetSelect.selectedIndex = 0;
+                    applyPreset(presetSelect.value);
+
+                    console.log(`Deleted preset: ${selectedPreset}`);
+                }
+            });
+
             document.getElementById('saveConfig').addEventListener('click', () => {
                 const configName = document.getElementById('configName').value;
-                if (!configName) return;
+                if (!configName) {
+                    alert('Please enter a configuration name');
+                    return;
+                }
 
                 const config = getConfigFromInputs();
+                const storageName = 'particle_timer_preset_' + configName;
+
                 STATE.presets.saved.set(configName, config);
 
-                document.cookie = `${configName}=${JSON.stringify(config)}; expires=${new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString()}; path=/; SameSite=Strict`;
+                if (StorageUtils.set(storageName, config)) {
+                    console.log(`Configuration "${configName}" saved successfully`);
+                    // Optional: Show feedback to user
+                    alert(`Configuration "${configName}" saved successfully`);
+                } else {
+                    alert('Failed to save configuration');
+                }
 
                 loadPresets();
                 document.getElementById('configName').value = '';
