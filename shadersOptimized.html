@@ -100,7 +100,9 @@
 
 
     <script>
+        // Replace the existing COLOR_PRESETS object with this expanded version
         const COLOR_PRESETS = {
+            // Original presets
             neonLights: [
                 [1.0, 0.0, 1.0],  // Magenta
                 [0.0, 1.0, 1.0],  // Cyan
@@ -119,8 +121,143 @@
                 [0.24, 0.64, 0.67],  // Sea blue
                 [0.96, 0.80, 0.38],  // Sand
                 [0.99, 0.54, 0.44]   // Coral
+            ],
+            sunset: [
+                [0.98, 0.37, 0.05],  // Orange-red
+                [0.98, 0.64, 0.18],  // Orange
+                [0.91, 0.84, 0.42],  // Yellow
+                [0.69, 0.19, 0.38],  // Deep purple
+                [0.44, 0.28, 0.56]   // Violet
+            ],
+            cyberpunk: [
+                [0.94, 0.21, 0.59],  // Hot pink
+                [0.07, 0.91, 0.91],  // Bright cyan
+                [0.98, 0.98, 0.06],  // Electric yellow
+                [0.6, 0.0, 0.8],     // Purple
+                [0.13, 0.05, 0.19]   // Dark purple
+            ],
+            forestGlade: [
+                [0.13, 0.55, 0.13],  // Forest green
+                [0.42, 0.56, 0.14],  // Olive
+                [0.68, 0.85, 0.32],  // Light green
+                [0.88, 0.87, 0.74],  // Beige
+                [0.55, 0.27, 0.07]   // Brown
+            ],
+            retroWave: [
+                [0.93, 0.0, 0.54],   // Hot pink
+                [0.16, 0.84, 0.99],  // Bright blue
+                [0.99, 0.42, 0.52],  // Salmon
+                [0.47, 0.04, 0.65],  // Purple
+                [0.11, 0.0, 0.31]    // Deep blue
+            ],
+            candyShop: [
+                [0.97, 0.39, 0.53],  // Bubblegum
+                [0.99, 0.71, 0.38],  // Orange
+                [0.55, 0.93, 0.55],  // Mint
+                [0.38, 0.69, 0.96],  // Sky blue
+                [0.91, 0.44, 0.99]   // Lavender
+            ],
+            fireAndIce: [
+                [0.99, 0.24, 0.0],   // Fire red
+                [0.99, 0.56, 0.0],   // Orange
+                [0.0, 0.66, 0.98],   // Ice blue
+                [0.0, 0.47, 0.75],   // Blue
+                [0.93, 0.9, 0.81]    // Off-white
+            ],
+            monochrome: [
+                [0.0, 0.0, 0.0],     // Black
+                [0.2, 0.2, 0.2],     // Dark gray
+                [0.4, 0.4, 0.4],     // Gray
+                [0.7, 0.7, 0.7],     // Light gray
+                [1.0, 1.0, 1.0]      // White
+            ],
+            tropicalParadise: [
+                [0.95, 0.36, 0.25],  // Coral
+                [0.16, 0.73, 0.58],  // Teal
+                [0.99, 0.85, 0.21],  // Sunshine
+                [0.0, 0.6, 0.45],    // Palm
+                [0.95, 0.61, 0.07]   // Mango
+            ],
+            galaxyDust: [
+                [0.07, 0.03, 0.15],  // Deep space
+                [0.17, 0.05, 0.35],  // Purple space
+                [0.19, 0.28, 0.54],  // Cosmic blue
+                [0.67, 0.55, 0.85],  // Lavender
+                [0.93, 0.89, 0.99]   // Stardust
+            ],
+            autumnLeaves: [
+                [0.55, 0.27, 0.07],  // Brown
+                [0.82, 0.33, 0.0],   // Rust
+                [0.91, 0.45, 0.0],   // Orange
+                [0.99, 0.75, 0.0],   // Golden
+                [0.6, 0.2, 0.0]      // Deep red
+            ],
+            winterFrost: [
+                [0.88, 0.94, 0.99],  // Ice white
+                [0.69, 0.85, 0.93],  // Pale blue
+                [0.5, 0.67, 0.85],   // Cold blue
+                [0.26, 0.45, 0.68],  // Winter blue
+                [0.13, 0.21, 0.37]   // Deep blue
+            ],
+            rainbowVibrant: [
+                [0.93, 0.11, 0.14],  // Red
+                [0.99, 0.59, 0.0],   // Orange
+                [0.99, 0.91, 0.0],   // Yellow
+                [0.0, 0.75, 0.22],   // Green
+                [0.0, 0.51, 0.98],   // Blue
+                [0.45, 0.0, 0.88]    // Purple
+            ],
+            darkMode: [
+                [0.13, 0.13, 0.13],  // Dark gray
+                [0.2, 0.2, 0.2],     // Medium gray
+                [0.33, 0.33, 0.33],  // Gray
+                [0.93, 0.93, 0.93],  // Light gray
+                [0.0, 0.48, 1.0]     // Accent blue
+            ],
+            mintChocolate: [
+                [0.36, 0.82, 0.55],  // Mint
+                [0.2, 0.63, 0.46],   // Dark mint
+                [0.37, 0.22, 0.13],  // Chocolate
+                [0.23, 0.12, 0.05],  // Dark chocolate
+                [0.85, 0.99, 0.85]   // Light mint
+            ],
+            berryBliss: [
+                [0.75, 0.0, 0.19],   // Raspberry
+                [0.53, 0.0, 0.27],   // Cranberry
+                [0.34, 0.0, 0.25],   // Blackberry
+                [0.2, 0.0, 0.36],    // Dark purple
+                [0.95, 0.68, 0.79]   // Light pink
+            ],
+            goldLuxury: [
+                [0.83, 0.69, 0.22],  // Gold
+                [0.52, 0.39, 0.0],   // Dark gold
+                [0.95, 0.87, 0.51],  // Light gold
+                [0.13, 0.13, 0.13],  // Black
+                [0.93, 0.93, 0.93]   // White
+            ],
+            marineDeep: [
+                [0.0, 0.05, 0.16],   // Deep marine
+                [0.0, 0.11, 0.33],   // Dark blue
+                [0.0, 0.22, 0.49],   // Navy
+                [0.0, 0.46, 0.74],   // Ocean blue
+                [0.39, 0.83, 0.96]   // Sky blue
+            ],
+            cottonCandy: [
+                [0.99, 0.62, 0.77],  // Pink
+                [0.99, 0.84, 0.92],  // Light pink
+                [0.85, 0.65, 0.93],  // Lavender
+                [0.69, 0.88, 0.9],   // Light blue
+                [0.99, 0.93, 0.64]   // Light yellow
+            ],
+            electroNight: [
+                [0.05, 0.05, 0.05],  // Almost black
+                [0.33, 0.0, 0.5],    // Deep purple
+                [0.0, 0.4, 0.6],     // Deep blue
+                [0.0, 0.8, 0.8],     // Cyan
+                [0.0, 1.0, 0.0]      // Neon green
             ]
         };
+
         // Particle Configuration System
         const ConfigSchema = {
             fields: {
@@ -142,7 +279,7 @@
                     appearance: {
                         size: {
                             base: { type: 'number', min: 1, max: 20, default: 15 },
-                            variation: { type: 'number', min: 0, max: 75, default: 75 }
+                            variation: { type: 'number', min: 0, max: 75, default: 10 }
                         },
                         colors: {
                             type: 'colorArray',
@@ -150,19 +287,19 @@
                             default: COLOR_PRESETS.oceanBreeze
                         },
                         glow: {
-                            intensity: { type: 'number', min: 0.1, max: 10, step: 0.1, default: 0 },
+                            intensity: { type: 'number', min: 0.1, max: 10, step: 0.1, default: 0.3 },
                             size: { type: 'number', min: 0.1, max: 10, step: 0.1, default: 2.0 }
                         }
                     },
                     mouseBehavior: {
-                        pushForce: { type: 'number', min: 0, max: 5000, default: 2000 },
-                        pushRadius: { type: 'number', min: 0, max: 500, default: 200 }
+                        pushForce: { type: 'number', min: 0, max: 5000, default: 1500 },
+                        pushRadius: { type: 'number', min: 0, max: 500, default: 100 }
                     },
                 },
                 text: {
                     size: { type: 'number', min: 100, max: 400, default: 30 },
                     scale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.6 },
-                    verticalOffset: { type: 'number', min: -10, max: 10, step: 0.01, default: 0 },
+                    verticalOffset: { type: 'number', min: -10, max: 10, step: 0.01, default: 1 },
                     endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 1 },
                     density: { type: 'number', min: 1, max: 5, default: 1 },
                     endText: { type: 'string', default: 'Time\'s up!' },
@@ -448,6 +585,491 @@
                     ordering: "vertical",
                     extraParticleMode: "center",
                     radius: 2
+                }
+            },
+            sunset: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 8,
+                            variation: 12
+                        },
+                        colors: COLOR_PRESETS.sunset,
+                        glow: {
+                            intensity: 0.6,
+                            size: 2.0
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 2.5,
+                            variation: 2.0
+                        },
+                        damping: {
+                            base: 0.97,
+                            variation: 0.02
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "wave",
+                    radius: 1.2
+                }
+            },
+
+            cyberpunk: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 4,
+                            variation: 15
+                        },
+                        colors: COLOR_PRESETS.cyberpunk,
+                        glow: {
+                            intensity: 1.8,
+                            size: 3.0
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 5,
+                            variation: 4
+                        }
+                    },
+                    mouseBehavior: {
+                        pushForce: 2500,
+                        pushRadius: 150
+                    }
+                },
+                text: {
+                    size: 50,
+                    scale: 0.7,
+                    density: 1
+                },
+                behavior: {
+                    extraParticleMode: "fountain",
+                    radius: 1.5
+                }
+            },
+
+            forestGlade: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 6,
+                            variation: 8
+                        },
+                        colors: COLOR_PRESETS.forestGlade,
+                        glow: {
+                            intensity: 0.2,
+                            size: 1.2
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 2,
+                            variation: 1.5
+                        },
+                        damping: {
+                            base: 0.98,
+                            variation: 0.01
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle"
+                }
+            },
+
+            retroWave: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 3,
+                            variation: 6
+                        },
+                        colors: COLOR_PRESETS.retroWave,
+                        glow: {
+                            intensity: 1.2,
+                            size: 2.5
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "wave",
+                    radius: 1.0
+                }
+            },
+
+            candyShop: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 7,
+                            variation: 10
+                        },
+                        colors: COLOR_PRESETS.candyShop,
+                        glow: {
+                            intensity: 0.4,
+                            size: 1.8
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 3.5,
+                            variation: 2.5
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle"
+                }
+            },
+
+            fireAndIce: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 5,
+                            variation: 15
+                        },
+                        colors: COLOR_PRESETS.fireAndIce,
+                        glow: {
+                            intensity: 0.7,
+                            size: 2.2
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 4,
+                            variation: 3
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "fountain"
+                }
+            },
+
+            monochrome: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 3,
+                            variation: 3
+                        },
+                        colors: COLOR_PRESETS.monochrome,
+                        glow: {
+                            intensity: 0.1,
+                            size: 1.0
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 2.5,
+                            variation: 1.0
+                        },
+                        damping: {
+                            base: 0.97,
+                            variation: 0.01
+                        }
+                    }
+                },
+                behavior: {
+                    ordering: "optimized"
+                }
+            },
+
+            tropicalParadise: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 8,
+                            variation: 12
+                        },
+                        colors: COLOR_PRESETS.tropicalParadise,
+                        glow: {
+                            intensity: 0.5,
+                            size: 2.0
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle",
+                    radius: 1.2
+                }
+            },
+
+            galaxyDust: {
+                particles: {
+                    position: {
+                        spread: 1.5
+                    },
+                    appearance: {
+                        size: {
+                            base: 2,
+                            variation: 18
+                        },
+                        colors: COLOR_PRESETS.galaxyDust,
+                        glow: {
+                            intensity: 1.5,
+                            size: 3.0
+                        }
+                    },
+                    physics: {
+                        damping: {
+                            base: 0.99,
+                            variation: 0.005
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "spiral",
+                    radius: 1.8
+                }
+            },
+
+            autumnLeaves: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 6,
+                            variation: 8
+                        },
+                        colors: COLOR_PRESETS.autumnLeaves,
+                        glow: {
+                            intensity: 0.3,
+                            size: 1.5
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 2,
+                            variation: 2.5
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "wave",
+                    radius: 1.1
+                }
+            },
+
+            winterFrost: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 4,
+                            variation: 6
+                        },
+                        colors: COLOR_PRESETS.winterFrost,
+                        glow: {
+                            intensity: 0.8,
+                            size: 2.0
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 2,
+                            variation: 1.5
+                        },
+                        damping: {
+                            base: 0.96,
+                            variation: 0.02
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle",
+                    radius: 1.0
+                }
+            },
+
+            rainbowVibrant: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 7,
+                            variation: 10
+                        },
+                        colors: COLOR_PRESETS.rainbowVibrant,
+                        glow: {
+                            intensity: 0.6,
+                            size: 1.8
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle",
+                    radius: 1.3
+                }
+            },
+
+            darkMode: {
+                particles: {
+                    appearance: {
+                        size: {
+                            variation: 0
+                        },
+                        colors: COLOR_PRESETS.darkMode,
+                        glow: {
+                            intensity: 1,
+                            size: 2
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 7,
+                            variation: 5.0
+                        },
+                    },
+                },
+                text: {
+                    size: 50,
+                    scale: 1,
+                },
+                behavior: {
+                    extraParticleMode: "maintain"
+                }
+            },
+
+            mintChocolate: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 5,
+                            variation: 7
+                        },
+                        colors: COLOR_PRESETS.mintChocolate,
+                        glow: {
+                            intensity: 0.3,
+                            size: 1.6
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "wave"
+                }
+            },
+
+            berryBliss: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 6,
+                            variation: 9
+                        },
+                        colors: COLOR_PRESETS.berryBliss,
+                        glow: {
+                            intensity: 0.7,
+                            size: 2.0
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "spiral",
+                    radius: 1.1
+                }
+            },
+
+            goldLuxury: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 4,
+                            variation: 6
+                        },
+                        colors: COLOR_PRESETS.goldLuxury,
+                        glow: {
+                            intensity: 1.1,
+                            size: 2.2
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 2.5,
+                            variation: 1.5
+                        },
+                        damping: {
+                            base: 0.97,
+                            variation: 0.015
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle",
+                    radius: 0.9
+                }
+            },
+
+            marineDeep: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 5,
+                            variation: 8
+                        },
+                        colors: COLOR_PRESETS.marineDeep,
+                        glow: {
+                            intensity: 0.9,
+                            size: 2.4
+                        }
+                    },
+                    physics: {
+                        damping: {
+                            base: 0.98,
+                            variation: 0.01
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "wave",
+                    radius: 1.1
+                }
+            },
+
+            cottonCandy: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 7,
+                            variation: 9
+                        },
+                        colors: COLOR_PRESETS.cottonCandy,
+                        glow: {
+                            intensity: 0.4,
+                            size: 1.7
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "circle"
+                }
+            },
+
+            electroNight: {
+                particles: {
+                    appearance: {
+                        size: {
+                            base: 3,
+                            variation: 12
+                        },
+                        colors: COLOR_PRESETS.electroNight,
+                        glow: {
+                            intensity: 2.0,
+                            size: 3.0
+                        }
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 4,
+                            variation: 3
+                        }
+                    }
+                },
+                behavior: {
+                    extraParticleMode: "spiral",
+                    radius: 1.3
                 }
             }
         };
@@ -1406,8 +2028,7 @@
                 <h3>Particle Style</h3>
                 <div style="display: flex; align-items: center; margin-bottom: 10px; max-width: 300px;">
                     <select id="presetStyle" style="width: auto; min-width: 150px; margin-right: 10px;">
-                        <option value="minimal">Minimal</option>
-                        <option value="neon">Neon</option>
+                        <!-- Options will be added dynamically -->
                     </select>
                     <button id="deletePreset" style="background: #d44; padding: 5px 10px;">Delete</button>
                 </div>
@@ -1415,6 +2036,23 @@
                     Built-in presets cannot be deleted.
                 </div>
             `;
+
+            menu.appendChild(presetSection);
+
+            const presetSelect = document.getElementById('presetStyle');
+
+            Object.keys(PRESETS).forEach(presetName => {
+                const option = document.createElement('option');
+                option.value = presetName;
+
+                const displayName = presetName
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase());
+
+                option.textContent = displayName;
+                presetSelect.appendChild(option);
+            });
+
 
             const saveSection = document.createElement('div');
             saveSection.className = 'section';
@@ -1425,7 +2063,6 @@
             `;
 
             menu.appendChild(saveSection);
-            menu.appendChild(presetSection);
 
             ConfigSchema.generateUI(menu);
 
