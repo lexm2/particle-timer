@@ -163,7 +163,7 @@
                     size: { type: 'number', min: 100, max: 400, default: 30 },
                     scale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.6 },
                     verticalOffset: { type: 'number', min: -10, max: 10, step: 0.01, default: 0 },
-                    endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.4 },
+                    endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 1 },
                     density: { type: 'number', min: 1, max: 5, default: 1 },
                     endText: { type: 'string', default: 'Time\'s up!' },
 
@@ -469,6 +469,8 @@
 
             console.log(`Applying preset: ${presetName}`, preset);
 
+            saveLastUsedConfig(presetName);
+
             // Set the current config to the selected preset
             STATE.config = Object.assign({}, preset);
 
@@ -570,6 +572,46 @@
                     key.startsWith('particle_timer_preset_'));
             }
         };
+
+        function saveLastUsedConfig(configName) {
+            try {
+                localStorage.setItem('particle_timer_last_config', configName);
+                console.log(`Saved "${configName}" as last used config`);
+            } catch (e) {
+                console.error('Error saving last used config:', e);
+            }
+        }
+
+        function loadLastUsedConfig() {
+            try {
+                const lastConfig = localStorage.getItem('particle_timer_last_config');
+                if (lastConfig) {
+                    console.log(`Found last used config: "${lastConfig}"`);
+
+                    setTimeout(() => {
+                        const presetSelect = document.getElementById('presetStyle');
+
+                        let configExists = false;
+                        for (let i = 0; i < presetSelect.options.length; i++) {
+                            if (presetSelect.options[i].value === lastConfig) {
+                                presetSelect.selectedIndex = i;
+                                configExists = true;
+                                break;
+                            }
+                        }
+
+                        if (configExists) {
+                            console.log(`Applying last used config: "${lastConfig}"`);
+                            applyPreset(lastConfig);
+                        } else {
+                            console.log(`Last config "${lastConfig}" not found, using default`);
+                        }
+                    }, 100);
+                }
+            } catch (e) {
+                console.error('Error loading last used config:', e);
+            }
+        }
 
         function loadPresets() {
             // Load default presets into state
@@ -868,14 +910,16 @@
             spiral: {
                 renderExtras: true,
                 init: (points, remainingPoints) => {
-                    const spiralRadius = CONFIG.behavior.radius;
+                    const spiralRadius = STATE.config.behavior.radius;
                     const spiralTurns = 3;
+                    const aspectRatio = STATE.render.canvas.width / STATE.render.canvas.height;
+
                     for (let i = 0; i < remainingPoints; i++) {
                         const distance = (i / remainingPoints) * spiralRadius;
                         const angle = i * (2 * Math.PI * spiralTurns / remainingPoints);
                         points.push({
                             x: Math.cos(angle) * distance,
-                            y: Math.sin(angle) * distance
+                            y: Math.sin(angle) * distance * aspectRatio
                         });
                     }
                 }
@@ -883,13 +927,16 @@
             wave: {
                 renderExtras: true,
                 init: (points, remainingPoints) => {
-                    const waveAmplitude = CONFIG.behavior.radius * 0.5;
+                    const radius = STATE.config.behavior.radius;
+                    const waveAmplitude = radius * 0.5;
                     const waveFrequency = 5;
+                    const aspectRatio = STATE.render.canvas.width / STATE.render.canvas.height;
+
                     for (let i = 0; i < remainingPoints; i++) {
-                        const x = (i / remainingPoints) * 2 - 1;
+                        const x = ((i / remainingPoints) * 2 - 1) * radius;
                         points.push({
-                            x: x * CONFIG.behavior.radius,
-                            y: Math.sin(x * waveFrequency) * waveAmplitude
+                            x: x,
+                            y: Math.sin(x * waveFrequency / radius) * waveAmplitude * aspectRatio
                         });
                     }
                 }
@@ -897,11 +944,14 @@
             fountain: {
                 renderExtras: true,
                 init: (points, remainingPoints) => {
+                    const radius = STATE.config.behavior.radius;
                     const fountainBase = -0.8;
+                    const aspectRatio = STATE.render.canvas.width / STATE.render.canvas.height;
+
                     for (let i = 0; i < remainingPoints; i++) {
                         points.push({
-                            x: (Math.random() * 2 - 1) * CONFIG.behavior.radius * 0.5,
-                            y: fountainBase
+                            x: (Math.random() * 2 - 1) * radius * 0.5,
+                            y: fountainBase * aspectRatio
                         });
                     }
                 }
@@ -913,6 +963,20 @@
                         points.push({
                             x: -1,
                             y: 1
+                        });
+                    }
+                }
+            },
+            maintain: {
+                renderExtras: true,
+                init: (points, remainingPoints) => {
+                    const radius = STATE.config.behavior.radius * 3;
+
+                    for (let i = 0; i < remainingPoints; i++) {
+                        const angle = i * (2 * Math.PI / remainingPoints);
+                        points.push({
+                            x: Math.cos(angle) * radius,
+                            y: Math.sin(angle) * radius
                         });
                     }
                 }
@@ -1016,23 +1080,23 @@
             ctx.font = `bold ${textSize}px "Courier New", monospace`;
 
             const isTimeFormat = /^\d+:\d+$/.test(text);
-            
+
             // Set a reference aspect ratio to maintain consistent proportions
             const referenceWidth = ctx.measureText("9:99").width;
             const referenceHeight = textSize;
             const referenceAspectRatio = referenceWidth / referenceHeight;
-            
+
             let canvasWidth, canvasHeight, scaleFactor;
-            
+
             if (isTimeFormat) {
                 // Time format - use fixed width based on maximum possible time
                 const maxWidthMetrics = ctx.measureText("9:99");
                 const maxWidth = maxWidthMetrics.width;
                 const padding = maxWidth * 0.1; // 10% padding
-                
+
                 canvasWidth = maxWidth + padding * 2;
                 canvasHeight = textSize * 1.5; // Enough height with some padding
-                
+
                 // Scale factor remains 1.0 for time format as it's our reference
                 scaleFactor = textScale;
             } else {
@@ -1040,35 +1104,35 @@
                 const endTextMetrics = ctx.measureText(text);
                 const endTextWidth = endTextMetrics.width;
                 const endTextPadding = endTextWidth * 0.1; // 10% padding
-                
+
                 canvasWidth = endTextWidth + endTextPadding * 2;
                 canvasHeight = textSize * 1.5;
-                
+
                 // Calculate a scale factor that maintains aspect ratio
                 // This ensures the end text has the same proportions as the timer
                 const endTextAspectRatio = canvasWidth / canvasHeight;
                 scaleFactor = endTextScale * (referenceAspectRatio / endTextAspectRatio);
             }
-            
+
             // Set canvas dimensions
             textCanvas.width = canvasWidth;
             textCanvas.height = canvasHeight;
-            
+
             // Reset context after canvas resize
             ctx.font = `bold ${textSize}px "Courier New", monospace`;
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
-            
+
             // Generate points from the canvas pixels
             const points = [];
             const imageData = ctx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
-            
+
             // Calculate x and y scale factors to maintain aspect ratio
             const xScale = isTimeFormat ? textScale : endTextScale;
             const yScale = xScale; // Use same scale to maintain aspect ratio
-            
+
             switch (STATE.config.behavior.ordering) {
                 case 'vertical':
                     for (let x = 0; x < textCanvas.width; x += density) {
@@ -1299,6 +1363,8 @@
             loadPresets();
             STATE.config = ConfigSchema.createDefault();
 
+            loadLastUsedConfig();
+
             STATE.stats.element = document.createElement('div');
             Object.assign(STATE.stats.element.style, {
                 position: 'fixed',
@@ -1481,6 +1547,8 @@
 
                 const config = getConfigFromInputs();
                 const storageName = 'particle_timer_preset_' + configName;
+
+                saveLastUsedConfig(configName);
 
                 STATE.presets.saved.set(configName, config);
 
