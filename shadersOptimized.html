@@ -651,8 +651,8 @@
                     },
                     physics: {
                         acceleration: {
-                            base: 2.5,
-                            variation: 2.0
+                            base: 4.5,
+                            variation: 2
                         },
                         damping: {
                             base: 0.97,
@@ -660,14 +660,25 @@
                         }
                     }
                 },
+                text: {
+                    size: 50,
+                    scale: 0.7,
+                    font: "Impact",
+                    font: "Georgia",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "optimized", // Methodical effect
                     extraParticleMode: "wave",
                     radius: 1.2
                 }
             },
-
             cyberpunk: {
                 particles: {
+                    position: {
+                        min: -5,
+                        spread: 8
+                    },
                     appearance: {
                         size: {
                             base: 4,
@@ -681,7 +692,7 @@
                     },
                     physics: {
                         acceleration: {
-                            base: 5,
+                            base: 10,
                             variation: 4
                         }
                     },
@@ -693,10 +704,12 @@
                 text: {
                     size: 50,
                     scale: 0.7,
-                    density: 1
+                    density: 1,
+                    font: "Impact",
                 },
                 behavior: {
-                    extraParticleMode: "fountain",
+                    extraParticleMode: "center",
+                    ordering: "horizontal",
                     radius: 1.5
                 }
             },
@@ -717,7 +730,7 @@
                     physics: {
                         acceleration: {
                             base: 2,
-                            variation: 1.5
+                            variation: 3
                         },
                         damping: {
                             base: 0.98,
@@ -725,7 +738,15 @@
                         }
                     }
                 },
+                text: {
+                    size: 40,
+                    scale: 0.65,
+                    density: 1,
+                    font: "Garamond",
+                    isBold: false
+                },
                 behavior: {
+                    ordering: "optimized", // Methodical effect
                     extraParticleMode: "circle"
                 }
             },
@@ -742,11 +763,28 @@
                             intensity: 1.2,
                             size: 2.5
                         }
-                    }
+                    },
+                    mouseBehavior: {
+                        pushForce: 2500,
+                        pushRadius: 150
+                    },
+                    physics: {
+                        acceleration: {
+                            base: 5,
+                            variation: 5,
+                        },
+                    },
+                },
+                text: {
+                    size: 60,
+                    scale: 0.8,
+                    font: "Arial Black",
+                    isBold: true
                 },
                 behavior: {
+                    ordering: "horizontal",
                     extraParticleMode: "wave",
-                    radius: 1.0
+                    radius: 2
                 }
             },
 
@@ -770,8 +808,17 @@
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Comic Sans MS",
+                    isBold: true
+                },
                 behavior: {
-                    extraParticleMode: "circle"
+                    ordering: "vertical",
+                    extraParticleMode: "circle",
+                    radius: 0.7
                 }
             },
 
@@ -795,7 +842,15 @@
                         }
                     }
                 },
+                text: {
+                    size: 50,
+                    scale: 0.75,
+                    density: 1,
+                    font: "Trebuchet MS",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "horizontal", // Glitch effect for fire/ice contrast
                     extraParticleMode: "fountain"
                 }
             },
@@ -804,13 +859,13 @@
                 particles: {
                     appearance: {
                         size: {
-                            base: 3,
+                            base: 5,
                             variation: 3
                         },
                         colors: COLOR_PRESETS.monochrome,
                         glow: {
-                            intensity: 0.1,
-                            size: 1.0
+                            intensity: 2,
+                            size: 2
                         }
                     },
                     physics: {
@@ -824,8 +879,16 @@
                         }
                     }
                 },
+                text: {
+                    size: 60,
+                    scale: 1,
+                    density: 1,
+                    font: "Courier New",
+                    isBold: false
+                },
                 behavior: {
-                    ordering: "optimized"
+                    ordering: "optimized",
+                    extraParticleMode: "center"
                 }
             },
 
@@ -843,8 +906,16 @@
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Verdana",
+                    isBold: true
+                },
                 behavior: {
-                    extraParticleMode: "circle",
+                    ordering: "vertical",
+                    extraParticleMode: "maintain",
                     radius: 1.2
                 }
             },
@@ -872,7 +943,14 @@
                         }
                     }
                 },
+                text: {
+                    size: 55,
+                    scale: 0.8,
+                    font: "Palatino Linotype",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "optimized", // Methodical for space-like precision
                     extraParticleMode: "spiral",
                     radius: 1.8
                 }
@@ -882,7 +960,7 @@
                 particles: {
                     appearance: {
                         size: {
-                            base: 6,
+                            base: 15,
                             variation: 8
                         },
                         colors: COLOR_PRESETS.autumnLeaves,
@@ -894,11 +972,19 @@
                     physics: {
                         acceleration: {
                             base: 2,
-                            variation: 2.5
+                            variation: 8
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Book Antiqua",
+                    isBold: false
+                },
                 behavior: {
+                    ordering: "horizontal", // Glitch-like for falling leaves effect
                     extraParticleMode: "wave",
                     radius: 1.1
                 }
@@ -919,18 +1005,26 @@
                     },
                     physics: {
                         acceleration: {
-                            base: 2,
+                            base: 2.7,
                             variation: 1.5
                         },
                         damping: {
-                            base: 0.96,
-                            variation: 0.02
+                            base: 0,
+                            variation: 0
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Tahoma",
+                    isBold: false
+                },
                 behavior: {
+                    ordering: "optimized", // Methodical for snowflake precision
                     extraParticleMode: "circle",
-                    radius: 1.0
+                    radius: 0.8
                 }
             },
 
@@ -948,9 +1042,17 @@
                         }
                     }
                 },
+                text: {
+                    size: 50,
+                    scale: 0.75,
+                    density: 1,
+                    font: "Lucida Sans Unicode",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "vertical",
                     extraParticleMode: "circle",
-                    radius: 1.3
+                    radius: 1
                 }
             },
 
@@ -976,8 +1078,11 @@
                 text: {
                     size: 50,
                     scale: 1,
+                    font: "MS Sans Serif",
+                    isBold: true
                 },
                 behavior: {
+                    ordering: "optimized",
                     extraParticleMode: "maintain"
                 }
             },
@@ -996,8 +1101,16 @@
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Lucida Console",
+                    isBold: false
+                },
                 behavior: {
-                    extraParticleMode: "wave"
+                    ordering: "horizontal", // Glitch effect for contrast
+                    extraParticleMode: "test"
                 }
             },
 
@@ -1015,7 +1128,15 @@
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Times New Roman",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "horizontal", // Glitch effect
                     extraParticleMode: "spiral",
                     radius: 1.1
                 }
@@ -1036,16 +1157,24 @@
                     },
                     physics: {
                         acceleration: {
-                            base: 2.5,
+                            base: 3,
                             variation: 1.5
                         },
                         damping: {
-                            base: 0.97,
-                            variation: 0.015
+                            base: 0.5,
+                            variation: 1
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Garamond",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "optimized",
                     extraParticleMode: "circle",
                     radius: 0.9
                 }
@@ -1071,7 +1200,15 @@
                         }
                     }
                 },
+                text: {
+                    size: 45,
+                    scale: 0.7,
+                    density: 1,
+                    font: "Helvetica",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "vertical",
                     extraParticleMode: "wave",
                     radius: 1.1
                 }
@@ -1091,7 +1228,15 @@
                         }
                     }
                 },
+                text: {
+                    size: 40,
+                    scale: 0.65,
+                    density: 1,
+                    font: "Comic Sans MS",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "vertical",
                     extraParticleMode: "circle"
                 }
             },
@@ -1116,7 +1261,15 @@
                         }
                     }
                 },
+                text: {
+                    size: 55,
+                    scale: 0.8,
+                    density: 1,
+                    font: "Arial Black",
+                    isBold: true
+                },
                 behavior: {
+                    ordering: "horizontal", // Glitch effect for electro theme
                     extraParticleMode: "spiral",
                     radius: 1.3
                 }
@@ -1513,11 +1666,9 @@
                     0.0001
                 );
 
-                arrays.dampings[i] = Math.min(
+                arrays.dampings[i] 
                     config.particles.physics.damping.base +
-                    Math.random() * config.particles.physics.damping.variation,
-                    0.9999
-                );
+                    Math.random() * config.particles.physics.damping.variation;
 
                 arrays.particleSizes[i] = config.particles.appearance.size.base +
                     Math.random() * config.particles.appearance.size.variation;
@@ -1663,7 +1814,7 @@
             const mousePixelX = STATE.mouse.x * canvas.width / 2;
             const mousePixelY = STATE.mouse.y * canvas.height / 2;
 
-            const pushForce = STATE.config.particles.mouseBehavior.pushForce;
+            const pushForce = STATE.config.particles.mouseBehavior.pushForce ? STATE.config.particles.mouseBehavior.pushForce : 0;
             const pushRadius = STATE.config.particles.mouseBehavior.pushRadius; // In pixels
 
             if (mouse.down) {
