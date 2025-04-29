@@ -303,6 +303,17 @@
                     endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 1 },
                     density: { type: 'number', min: 1, max: 5, default: 1 },
                     endText: { type: 'string', default: 'Time\'s up!' },
+                    font: {
+                        type: 'select',
+                        options: [
+                            "Arial", "Courier New", "Georgia", "Times New Roman", "Verdana",
+                            "Helvetica", "Impact", "Tahoma", "Trebuchet MS", "Comic Sans MS",
+                            "Arial Black", "Lucida Console", "Lucida Sans Unicode", "Palatino Linotype",
+                            "Book Antiqua", "Garamond", "MS Sans Serif", "MS Serif"
+                        ],
+                        default: "Courier New"
+                    },
+                    isBold: { type: 'boolean', default: true }
 
                 },
                 behavior: {
@@ -407,12 +418,26 @@
 
                     case 'select':
                         select = document.createElement('select');
-                        config.options.forEach(option => {
-                            opt = document.createElement('option');
-                            opt.value = option;
-                            opt.textContent = option;
-                            select.appendChild(opt);
-                        });
+
+
+                        if (config.options[0] === "Arial") {
+                            config.options.forEach(option => {
+                                opt = document.createElement('option');
+                                opt.value = option;
+                                opt.textContent = option;
+                                opt.style.fontFamily = option;
+                                select.appendChild(opt);
+                            });
+                        } else {
+                            // Regular select handling
+                            config.options.forEach(option => {
+                                opt = document.createElement('option');
+                                opt.value = option;
+                                opt.textContent = option;
+                                select.appendChild(opt);
+                            });
+                        }
+
                         select.value = config.default;
                         return select;
                     case 'string':
@@ -428,6 +453,30 @@
                 }
             }
         };
+
+        function detectAvailableFonts(fontArray) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const referenceFont = 'monospace';
+            const testString = 'mmmmmmmmmmlli';
+
+            ctx.font = `16px ${referenceFont}`;
+            const referenceFontWidth = ctx.measureText(testString).width;
+
+            const availableFonts = fontArray.filter(font => {
+                ctx.font = `16px "${font}", ${referenceFont}`;
+                const testWidth = ctx.measureText(testString).width;
+
+                return testWidth !== referenceFontWidth;
+            });
+
+            if (!availableFonts.includes('Courier New')) {
+                availableFonts.unshift('Courier New');
+            }
+
+            return availableFonts;
+        }
 
         function updateColorPickers(colors, container) {
             Array.from(container.querySelectorAll('.particleColor')).forEach(picker => picker.remove());
@@ -1694,17 +1743,20 @@
             const textSize = STATE.config.text.size;
             const textScale = STATE.config.text.scale;
             const endTextScale = STATE.config.text.endTextScale;
+            const selectedFont = STATE.config.text.font;
+            const isBold = STATE.config.text.isBold;
+            const fontWeight = isBold ? 'bold' : 'normal';
 
             const textCanvas = document.createElement('canvas');
             const ctx = textCanvas.getContext('2d');
 
             // Use a monospace font for consistent character widths
-            ctx.font = `bold ${textSize}px "Courier New", monospace`;
+            ctx.font = `${fontWeight} ${textSize}px "${selectedFont}"`;
 
             const isTimeFormat = /^\d+:\d+$/.test(text);
 
             // Set a reference aspect ratio to maintain consistent proportions
-            const referenceWidth = ctx.measureText("9:99").width;
+            const referenceWidth = ctx.measureText("8:88").width;
             const referenceHeight = textSize;
             const referenceAspectRatio = referenceWidth / referenceHeight;
 
@@ -1741,7 +1793,7 @@
             textCanvas.height = canvasHeight;
 
             // Reset context after canvas resize
-            ctx.font = `bold ${textSize}px "Courier New", monospace`;
+            ctx.font = `${fontWeight} ${textSize}px "${selectedFont}"`;
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -2202,6 +2254,35 @@
                 loadPresets();
                 document.getElementById('configName').value = '';
             });
+
+            const fontSelect = document.getElementById('text_font');
+            if (fontSelect) {
+                fontSelect.addEventListener('change', function () {
+                    const fontPath = this.dataset.configPath;
+                    const pathParts = fontPath.split('.');
+                    let target = STATE.config;
+
+                    for (let i = 0; i < pathParts.length - 1; i++) {
+                        target = target[pathParts[i]];
+                    }
+
+                    target[pathParts[pathParts.length - 1]] = this.value;
+
+                    if (STATE.timer.running) {
+                        TIMER.update();
+                    }
+                });
+            }
+
+            const boldToggle = document.getElementById('text_isBold');
+            if (boldToggle) {
+                boldToggle.addEventListener('change', function () {
+                    STATE.config.text.isBold = this.checked;
+                    if (STATE.timer.running) {
+                        TIMER.update();
+                    }
+                });
+            }
         }
 
 
