@@ -162,11 +162,11 @@
                 text: {
                     size: { type: 'number', min: 100, max: 400, default: 30 },
                     scale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.6 },
-                    verticalOffset : { type: 'number', min: -10, max: 10, step: 0.01, default: 0 },
+                    verticalOffset: { type: 'number', min: -10, max: 10, step: 0.01, default: 0 },
                     endTextScale: { type: 'number', min: 0.1, max: 2, step: 0.1, default: 0.4 },
                     density: { type: 'number', min: 1, max: 5, default: 1 },
                     endText: { type: 'string', default: 'Time\'s up!' },
-                    
+
                 },
                 behavior: {
                     ordering: {
@@ -1007,74 +1007,76 @@
             const density = STATE.config.text.density;
             const textSize = STATE.config.text.size;
             const textScale = STATE.config.text.scale;
+            const endTextScale = STATE.config.text.endTextScale;
 
             const textCanvas = document.createElement('canvas');
             const ctx = textCanvas.getContext('2d');
 
-            // Use a monospace font to ensure consistent character widths
+            // Use a monospace font for consistent character widths
             ctx.font = `bold ${textSize}px "Courier New", monospace`;
 
             const isTimeFormat = /^\d+:\d+$/.test(text);
             
+            // Set a reference aspect ratio to maintain consistent proportions
+            const referenceWidth = ctx.measureText("9:99").width;
+            const referenceHeight = textSize;
+            const referenceAspectRatio = referenceWidth / referenceHeight;
+            
+            let canvasWidth, canvasHeight, scaleFactor;
+            
             if (isTimeFormat) {
-                // Create a fixed-width canvas based on the maximum possible width
+                // Time format - use fixed width based on maximum possible time
                 const maxWidthMetrics = ctx.measureText("9:99");
-                const maxWidth = maxWidthMetrics.actualBoundingBoxLeft + maxWidthMetrics.actualBoundingBoxRight;
-                const padding = maxWidthMetrics.actualBoundingBoxLeft;
+                const maxWidth = maxWidthMetrics.width;
+                const padding = maxWidth * 0.1; // 10% padding
                 
-                // For vertical centering, ensure canvas height is adequate
-                // Get metrics to determine the actual height of the text
-                const heightMetrics = ctx.measureText('0');
-                const textHeight = heightMetrics.actualBoundingBoxAscent + heightMetrics.actualBoundingBoxDescent;
-                const verticalPadding = textSize * 0.25; // Add some padding
+                canvasWidth = maxWidth + padding * 2;
+                canvasHeight = textSize * 1.5; // Enough height with some padding
                 
-                // Set fixed canvas dimensions with appropriate height
-                textCanvas.width = maxWidth + Math.abs(padding * 2);
-                textCanvas.height = textHeight + verticalPadding * 2;
-                
-                // Reset context after canvas resize
-                ctx.font = `bold ${textSize}px "Courier New", monospace`;
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                
-                // Position text at the center of the canvas
-                ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+                // Scale factor remains 1.0 for time format as it's our reference
+                scaleFactor = textScale;
             } else {
-                // For non-time text (like end text)
-                const textMetrics = ctx.measureText(text);
-                const textWidth = textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
-                const padding = textMetrics.actualBoundingBoxLeft;
+                // End text - maintain aspect ratio relative to the reference
+                const endTextMetrics = ctx.measureText(text);
+                const endTextWidth = endTextMetrics.width;
+                const endTextPadding = endTextWidth * 0.1; // 10% padding
                 
-                // Get text height for proper vertical sizing
-                const heightMetrics = ctx.measureText(text);
-                const textHeight = heightMetrics.actualBoundingBoxAscent + heightMetrics.actualBoundingBoxDescent;
-                const verticalPadding = textSize * 0.25;
+                canvasWidth = endTextWidth + endTextPadding * 2;
+                canvasHeight = textSize * 1.5;
                 
-                textCanvas.width = textWidth + Math.abs(padding * 2);
-                textCanvas.height = textHeight + verticalPadding * 2;
-                
-                // Reset context after canvas resize
-                ctx.font = `bold ${textSize}px "Courier New", monospace`;
-                ctx.fillStyle = 'white';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+                // Calculate a scale factor that maintains aspect ratio
+                // This ensures the end text has the same proportions as the timer
+                const endTextAspectRatio = canvasWidth / canvasHeight;
+                scaleFactor = endTextScale * (referenceAspectRatio / endTextAspectRatio);
             }
-
+            
+            // Set canvas dimensions
+            textCanvas.width = canvasWidth;
+            textCanvas.height = canvasHeight;
+            
+            // Reset context after canvas resize
+            ctx.font = `bold ${textSize}px "Courier New", monospace`;
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, textCanvas.width / 2, textCanvas.height / 2);
+            
+            // Generate points from the canvas pixels
             const points = [];
             const imageData = ctx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
-
-            const verticalOffset = STATE.config.text.verticalOffset;
-
+            
+            // Calculate x and y scale factors to maintain aspect ratio
+            const xScale = isTimeFormat ? textScale : endTextScale;
+            const yScale = xScale; // Use same scale to maintain aspect ratio
+            
             switch (STATE.config.behavior.ordering) {
                 case 'vertical':
                     for (let x = 0; x < textCanvas.width; x += density) {
                         for (let y = 0; y < textCanvas.height; y += density) {
                             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * textScale,
-                                    y: ((-(y / textCanvas.height) * 2 + 1) * textScale) + verticalOffset
+                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale
                                 });
                             }
                         }
@@ -1086,8 +1088,8 @@
                         for (let x = 0; x < textCanvas.width; x += density) {
                             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * textScale,
-                                    y: ((-(y / textCanvas.height) * 2 + 1) * textScale) + verticalOffset
+                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale
                                 });
                             }
                         }
@@ -1100,13 +1102,14 @@
                         for (let y = 0; y < textCanvas.height; y += density) {
                             if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
                                 validPixels.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * textScale,
-                                    y: ((-(y / textCanvas.height) * 2 + 1) * textScale) + verticalOffset
+                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale
                                 });
                             }
                         }
                     }
 
+                    // Rest of optimized case remains the same...
                     if (STATE.particles.previousPoints.size === 0) {
                         return validPixels;
                     }
