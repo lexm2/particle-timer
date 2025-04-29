@@ -1279,7 +1279,6 @@
             const gl = STATE.render.gl;
 
             gl.uniform2f(STATE.render.uniforms.resolution, gl.canvas.width, gl.canvas.height);
-
             gl.uniform1f(STATE.render.uniforms.glowIntensity, STATE.config.particles.appearance.glow.intensity);
             gl.uniform1f(STATE.render.uniforms.glowSize, STATE.config.particles.appearance.glow.size);
 
@@ -1289,11 +1288,14 @@
             gl.bindBuffer(gl.ARRAY_BUFFER, STATE.render.buffers.position);
             gl.bufferData(gl.ARRAY_BUFFER, STATE.particles.arrays.positions, gl.DYNAMIC_DRAW);
 
-            const renderCount = PARTICLE_MODES[STATE.config.behavior.extraParticleMode]?.renderExtras
-                ? STATE.particles.count
-                : STATE.particles.activeCount;
+            const mode = PARTICLE_MODES[STATE.config.behavior.extraParticleMode];
 
-            gl.drawArrays(gl.POINTS, 0, renderCount);
+            if (mode?.renderExtras && STATE.particles.activeCount < STATE.particles.count) {
+                gl.drawArrays(gl.POINTS, STATE.particles.activeCount, STATE.particles.count - STATE.particles.activeCount);
+                gl.drawArrays(gl.POINTS, 0, STATE.particles.activeCount);
+            } else {
+                gl.drawArrays(gl.POINTS, 0, STATE.particles.activeCount);
+            }
         }
 
         // Optimized timer system
