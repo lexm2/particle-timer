@@ -310,8 +310,14 @@
         // Optimized particle modes
         const ParticleFunctions = {
             registry: {},
+            builtInFunctions: new Set(),
 
             register(name, functionBody) {
+                this.registry[name] = functionBody;
+            },
+
+            registerBuiltIn(name, functionBody) {
+                this.builtInFunctions.add(name);
                 this.registry[name] = functionBody;
             },
 
@@ -375,7 +381,7 @@
             }
         };
 
-        ParticleFunctions.register('progressCircle', `
+        ParticleFunctions.registerBuiltIn('progressCircle', `
             // Get progress directly from the timer object or calculate it
             let progressPercentage;
             
@@ -409,29 +415,18 @@
         `);
 
 
-        ParticleFunctions.register('circle', `
+        ParticleFunctions.registerBuiltIn('circle', `
             return {
                 x: Math.cos(angle) * radius,
                 y: Math.sin(angle) * radius * aspectRatio
             };
         `);
 
-        ParticleFunctions.register('center', `
+        ParticleFunctions.registerBuiltIn('center', `
             return { x: 0, y: 0 };
         `);
 
-        ParticleFunctions.register('spiral', `
-            const distance = (index / total) * radius;
-            const spiralTurns = 3;
-            const spiralAngle = angle + index * (2 * Math.PI * spiralTurns / total);
-            
-            return {
-                x: Math.cos(spiralAngle) * distance,
-                y: Math.sin(spiralAngle) * distance * aspectRatio
-            };
-        `);
-
-        ParticleFunctions.register('wave', `
+        ParticleFunctions.registerBuiltIn('wave', `
             const x = ((index / total) * 2 - 1) * radius;
             const waveAmplitude = radius * 0.5;
             const waveFrequency = 5;
@@ -442,7 +437,7 @@
             };
         `);
 
-        ParticleFunctions.register('fountain', `
+        ParticleFunctions.registerBuiltIn('fountain', `
             const fountainBase = -0.8;
             
             return {
@@ -451,9 +446,8 @@
             };
         `);
 
-        ParticleFunctions.register('maintain', `
+        ParticleFunctions.registerBuiltIn('offScreenCircle', `
             const largeRadius = radius * 3;
-            const angle = (index / total) * 2 * Math.PI;
             
             return {
                 x: Math.cos(angle) * largeRadius,
@@ -462,14 +456,14 @@
         `);
 
         // Add some dynamic, time-based functions
-        ParticleFunctions.register('pulsatingCircle', `
+        ParticleFunctions.registerBuiltIn('pulsatingCircle', `
             return {
                 x: Math.cos(angle) * radius * (1 + 0.3 * Math.sin(time)),
                 y: Math.sin(angle) * radius * aspectRatio * (1 + 0.3 * Math.cos(time))
             };
         `);
 
-        ParticleFunctions.register('dynamicSpiral', `
+        ParticleFunctions.registerBuiltIn('dynamicSpiral', `
             const distance = (index / total) * radius * (1 + 0.2 * Math.sin(time));
             const extraAngle = time * 0.5;
             
@@ -479,7 +473,7 @@
             };
         `);
 
-        ParticleFunctions.register('flower', `
+        ParticleFunctions.registerBuiltIn('flower', `
             const petals = 5;
             const petalSize = 0.3 + 0.1 * Math.sin(time);
             const modifiedRadius = radius * (1 + petalSize * Math.sin(petals * angle));
@@ -490,7 +484,7 @@
             };
         `);
 
-        ParticleFunctions.register('orbit', `
+        ParticleFunctions.registerBuiltIn('orbit', `
             // Main center
             if (index === 0) return { x: 0, y: 0 };
 
@@ -507,6 +501,827 @@
                 y: Math.sin(orbitAngle) * orbitRadius * aspectRatio
             };
         `);
+
+        ParticleFunctions.registerBuiltIn('galaxySwirl', `
+    // Distance from center affects speed and orbit size
+    const distanceFromCenter = index / total * radius;
+    
+    // Particles move faster near the center (inverse square law like real galaxies)
+    const orbitSpeed = 2 / (distanceFromCenter + 0.1);
+    
+    // Spiral arm effect
+    const armCount = 3;
+    const armOffset = (index % armCount) * (2 * Math.PI / armCount);
+    const spiralTightness = 2;
+    
+    // Calculate position
+    const orbitAngle = armOffset + (index * spiralTightness / total) + (time * orbitSpeed);
+    const x = Math.cos(orbitAngle) * distanceFromCenter;
+    const y = Math.sin(orbitAngle) * distanceFromCenter * aspectRatio;
+    
+    return { x, y };
+`);
+
+        ParticleFunctions.registerBuiltIn('quantumEntanglement', `
+    // Create two focal points that particles oscillate between
+    const focalDistance = radius * 0.7;
+    const focus1 = { x: -focalDistance, y: 0 };
+    const focus2 = { x: focalDistance, y: 0 };
+    
+    // Each particle oscillates at a slightly different frequency
+    const particleFreq = 1 + (index / total) * 0.5;
+    
+    // Calculate oscillation (0 to 1) for this particle
+    const oscillation = (Math.sin(time * particleFreq) + 1) / 2;
+    
+    // Apply some quantum "fuzziness" - particles get more uncertain in the middle
+    const uncertainty = Math.sin(oscillation * Math.PI) * 0.3 * radius;
+    const randomAngle = (index * 77.7 + time) % (2 * Math.PI); // Pseudo-random angle
+    
+    // Interpolate between the two foci based on oscillation
+    const x = focus1.x + (focus2.x - focus1.x) * oscillation + Math.cos(randomAngle) * uncertainty;
+    const y = (focus1.y + (focus2.y - focus1.y) * oscillation + Math.sin(randomAngle) * uncertainty) * aspectRatio;
+    
+    return { x, y };
+`);
+
+        ParticleFunctions.registerBuiltIn('dualOrbits', `
+    // Determine which system this particle belongs to
+    const isFirstSystem = index % 2 === 0;
+    
+    // System centers
+    const system1X = -radius * 0.3;
+    const system2X = radius * 0.3;
+    
+    // Orbit characteristics
+    const orbitIndex = Math.floor(index / 2);
+    const systemSize = total / 2;
+    const orbitRadius = (orbitIndex / systemSize) * radius * 0.4;
+    const orbitSpeed = 1 + (1 - orbitIndex / systemSize) * 2; // Smaller orbits move faster
+    
+    // Calculate position based on which system
+    let x, y;
+    if (isFirstSystem) {
+        const angle = (orbitIndex / systemSize) * Math.PI * 4 + time * orbitSpeed;
+        x = system1X + Math.cos(angle) * orbitRadius;
+        y = Math.sin(angle) * orbitRadius;
+    } else {
+        const angle = (orbitIndex / systemSize) * Math.PI * 4 - time * orbitSpeed;
+        x = system2X + Math.cos(angle) * orbitRadius;
+        y = Math.sin(angle) * orbitRadius;
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('dnaHelix', `
+    // Helix parameters
+    const helixRadius = radius * 0.3;
+    const helixPitch = 2.5; // How stretched the helix is
+    const helixSpeed = 0.5; // Rotation speed
+    
+    // Determine which strand (1 or 2) the particle belongs to
+    const strand = index % 2 === 0 ? 1 : -1;
+    
+    // Position along the helix (0 to 1)
+    const helixPos = (Math.floor(index / 2) / Math.floor(total / 2));
+    
+    // Height along the y-axis
+    const y = (helixPos * 2 - 1) * radius;
+    
+    // Angle around the helix
+    const helixAngle = helixPos * helixPitch * Math.PI + time * helixSpeed;
+    
+    // Calculate position - strand determines which side of the helix
+    const x = Math.cos(helixAngle) * helixRadius * strand;
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('aurora', `
+    // Wave parameters
+    const waveAmplitude = radius * 0.4;
+    const waveFrequency = 3; // Number of waves
+    const waveSpeed = 0.8; // How fast the waves move
+    
+    // Distribute particles horizontally
+    const x = ((index / total) * 2 - 1) * radius;
+    
+    // Create vertical waves
+    const baseHeight = 0.1;
+    const waveOffset = Math.sin(x * waveFrequency + time * waveSpeed) * waveAmplitude;
+    
+    // Add small random movements for a more natural effect
+    const flicker = Math.sin(index * 0.3 + time * 3) * 0.07 * radius;
+    
+    // Calculate final position
+    const y = baseHeight + waveOffset + flicker;
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('magneticField', `
+    // Set up two magnetic poles
+    const poleDistance = radius * 0.8;
+    const northPole = { x: -poleDistance, y: 0 };
+    const southPole = { x: poleDistance, y: 0 };
+    
+    // Assign each particle to a field line
+    const fieldLineCount = Math.ceil(total / 4);
+    const lineIndex = index % fieldLineCount;
+    const linePosition = Math.floor(index / fieldLineCount) / 4; // 0 to 1
+    
+    // Each field line starts at a different angle from the north pole
+    const startAngle = (lineIndex / fieldLineCount) * Math.PI;
+    
+    // Parametric equation for magnetic field line
+    const t = linePosition + 0.1 * Math.sin(time + lineIndex); // Add some movement
+    
+    // Field strength weakens with distance from poles
+    const fieldStrength = 0.8 + 0.2 * Math.sin(time * 0.5);
+    
+    // Calculate position
+    let x, y;
+    if (t < 0.5) {
+        // Path from north to south pole
+        const angle = startAngle + (1 - t * 2) * Math.PI; // Range from startAngle to startAngle+PI
+        const distance = poleDistance * Math.sin(t * Math.PI) * fieldStrength;
+        x = northPole.x + Math.cos(angle) * distance;
+        y = Math.sin(angle) * distance;
+    } else {
+        // Path from south back to north pole
+        const angle = startAngle + Math.PI + ((t - 0.5) * 2) * Math.PI; // Range from startAngle+PI to startAngle+2PI
+        const distance = poleDistance * Math.sin((1 - t) * Math.PI) * fieldStrength;
+        x = southPole.x + Math.cos(angle) * distance;
+        y = Math.sin(angle) * distance;
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('fractalTree', `
+    // Tree parameters
+    const iterations = 6; // Number of branching levels
+    const branchAngle = Math.PI / 5; // Angle between branches
+    
+    // Calculate which branch this particle belongs to
+    const branchIndex = Math.floor(index / (total / Math.pow(2, iterations)));
+    
+    // Convert branch index to a binary path (left/right decisions)
+    let path = branchIndex.toString(2).padStart(iterations, '0');
+    
+    // Start at the base of the tree
+    let x = 0;
+    let y = -radius * 0.9; // Bottom of the screen
+    let angle2 = 0; // Growing upward
+    let branchLength = radius * 0.3; // Length of the trunk
+    
+    // Trace the path through the tree
+    for (let i = 0; i < path.length; i++) {
+        const isRight = path[i] === '1';
+        
+        // Branch grows at an angle from the parent branch
+        angle2 += (isRight ? 1 : -1) * branchAngle;
+        
+        // Branches get shorter at each level
+        branchLength *= 0.7;
+        
+        // Move to the end of this branch
+        const growthFactor = Math.min(1, time % 5 / 3); // Tree grows over time
+        const currentLength = branchLength * growthFactor;
+        
+        x += Math.sin(angle2) * currentLength;
+        y += Math.cos(angle2) * currentLength;
+    }
+    
+    // Add a small random movement to create a leaf rustle effect
+    x += Math.sin(time * 3 + index) * 0.01 * radius;
+    y += Math.cos(time * 2 + index) * 0.01 * radius;
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('quantumWaveFunction', `
+    // Position atom off to the side of the screen
+    const atomX = -radius * 0.5;
+    const atomY = radius * 0.3;
+    
+    // Quantum parameters
+    const n = 1 + Math.floor((index % 4) / 2); // Principal quantum number
+    const l = Math.floor(index % 2);  // Angular momentum
+    
+    // Time-based phase
+    const phase = time * 0.5;
+    
+    // Calculate probability wave
+    const distance = 0.3 * radius * n;
+    const waveFreq = 5 - n;
+    
+    // Each electron cloud has a different orbital shape
+    const orbitAngle = (index / total) * Math.PI * 2 + phase;
+    
+    // Lissajous-like orbital patterns
+    const lFreq1 = n + 0.5;
+    const lFreq2 = l + 1;
+    
+    // Calculate final position
+    const x = atomX + distance * Math.cos(orbitAngle * lFreq1) * Math.cos(phase);
+    const y = atomY + distance * Math.sin(orbitAngle * lFreq2) * Math.sin(phase);
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.register('particleAccelerator', `
+    // Parameters for the accelerator
+    const ringRadius = radius * 0.8;
+    const ringCenterX = radius * 0.1; // Slightly off-center
+    const ringCenterY = -radius * 0.1;
+    
+    // Particle streams with different speeds
+    const streamCount = 2;
+    const streamIndex = index % streamCount;
+    
+    // Determine rotation direction and speed for each stream
+    const direction = streamIndex === 0 ? 1 : -1;
+    const baseSpeed = 1 + streamIndex * 0.2;
+    
+    // Position along the stream (0 to 1)
+    const positionInStream = Math.floor(index / streamCount) / Math.floor(total / streamCount);
+    
+    // Calculate angle around the ring - rename "angle" to "ringAngle"
+    const ringAngle = (positionInStream * Math.PI * 2) + (time * baseSpeed * direction);
+    
+    // Small radial oscillation
+    const radialOffset = Math.sin(ringAngle * 8 + time * 3) * 0.03 * radius;
+    
+    // Calculate position on the ring
+    const x = ringCenterX + (ringRadius + radialOffset) * Math.cos(ringAngle);
+    const y = ringCenterY + (ringRadius + radialOffset) * Math.sin(ringAngle);
+    
+    // Periodic collision effect - particles briefly scatter
+    const collisionTime = Math.floor(time / 2) * 2; // Collision every 2 seconds
+    const timeSinceCollision = time - collisionTime;
+    
+    // During collision, particles briefly scatter
+    if (timeSinceCollision < 0.3) {
+        const scatterAmount = Math.sin(timeSinceCollision * Math.PI / 0.3) * 0.2 * radius;
+        const scatterAngle = index * 1.618; // Golden ratio for nice distribution
+        return {
+            x: x + Math.cos(scatterAngle) * scatterAmount,
+            y: (y + Math.sin(scatterAngle) * scatterAmount) * aspectRatio
+        };
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+
+        ParticleFunctions.register('circuitBoard', `
+    // Circuit parameters
+    const pathCount = 5; // Number of circuit paths
+    const segmentCount = 4; // Segments per path
+    
+    // Determine which circuit path this particle is on
+    const pathIndex = index % pathCount;
+    const particleInPath = Math.floor(index / pathCount) / Math.floor(total / pathCount);
+    
+    // Circuit starting points (all off to the sides)
+    const startX = -1;
+    const startY = -0.7 + pathIndex * (radius * 0.4);
+    
+    // Predetermined circuit layout
+    const segments = [
+        // Each subarray defines segmentAngle and length for a segment
+        [0, 0.3],    // Right
+        [Math.PI/2, 0.2],  // Up
+        [0, 0.4],    // Right
+        [Math.PI*3/2, 0.3], // Down
+        [0, 0.5],    // Right
+    ];
+    
+    // Calculate which segment this particle is in
+    const segmentLength = 1 / segments.length;
+    const currentSegment = Math.min(segments.length - 1, 
+                                Math.floor(particleInPath / segmentLength));
+    const segmentProgress = (particleInPath % segmentLength) / segmentLength;
+    
+    // Start at the beginning of the circuit
+    let x = startX;
+    let y = startY;
+    
+    // Trace the path up to the current segment
+    for (let i = 0; i < currentSegment; i++) {
+        const [segmentAngle, length] = segments[i];
+        x += Math.cos(segmentAngle) * length * radius * 2;
+        y += Math.sin(segmentAngle) * length * radius * 2;
+    }
+    
+    // Add the partial segment
+    const [currentAngle, currentLength] = segments[currentSegment];
+    x += Math.cos(currentAngle) * currentLength * radius * 2 * segmentProgress;
+    y += Math.sin(currentAngle) * currentLength * radius * 2 * segmentProgress;
+    
+    // Add data pulse effect
+    const pulseFreq = 3; // Pulses per circuit
+    const pulseWidth = 0.1;
+    const pulseSpeed = 1.5;
+    
+    const pulsePosition = (time * pulseSpeed) % 1;
+    const distFromPulse = Math.abs(particleInPath - pulsePosition);
+    const inPulse = distFromPulse < pulseWidth || distFromPulse > (1 - pulseWidth);
+    
+    // Make particles brighter when the pulse passes (handled by caller)
+    
+    // Add slight movement perpendicular to direction
+    const perpAngle = currentAngle + Math.PI/2;
+    const oscAmount = inPulse ? 0.02 : 0.01;
+    x += Math.cos(perpAngle) * Math.sin(particleInPath * Math.PI * 8 + time * 3) * oscAmount * radius;
+    y += Math.sin(perpAngle) * Math.sin(particleInPath * Math.PI * 8 + time * 3) * oscAmount * radius;
+    
+    return { x, y: y * aspectRatio };
+`);
+
+
+        ParticleFunctions.registerBuiltIn('fluidDynamics', `
+    // Flow parameters
+    const flowSpeed = 0.5;
+    const flowDirection = 0; // Flowing left to right
+    
+    // Obstacle parameters
+    const obstacleCount = 3;
+    const obstacles = [];
+    
+    // Create fixed obstacle positions
+    for (let i = 0; i < obstacleCount; i++) {
+        obstacles.push({
+            x: (i * 0.5 - 0.5) * radius,
+            y: (Math.sin(i * 2.1) * 0.3) * radius,
+            radius: (0.1 + i * 0.03) * radius
+        });
+    }
+    
+    // Distribute particles evenly in the flow
+    const flowWidth = radius * 1.8;
+    const gridSize = Math.ceil(Math.sqrt(total));
+    const gridX = index % gridSize;
+    const gridY = Math.floor(index / gridSize);
+    
+    // Base position in the flow
+    let x = ((gridX / gridSize) * 2 - 1) * flowWidth;
+    let y = ((gridY / gridSize) * 2 - 1) * radius * 0.7;
+    
+    // Move the whole flow based on time
+    x = (x + time * flowSpeed) % (flowWidth * 2) - flowWidth;
+    
+    // Calculate fluid dynamics around obstacles
+    for (let obstacle of obstacles) {
+        const dx = x - obstacle.x;
+        const dy = y - obstacle.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < obstacle.radius * 3) {
+            // Particles get displaced around the obstacle
+            const angle = Math.atan2(dy, dx);
+            const influence = Math.max(0, 1 - distance / (obstacle.radius * 3));
+            
+            // Displacement strength increases as particles get closer
+            const displacement = obstacle.radius * influence * influence * 2;
+            
+            // Apply displacement perpendicular to the line to the obstacle
+            // This creates a swirling effect around the obstacle
+            x += Math.sin(angle) * displacement;
+            y -= Math.cos(angle) * displacement;
+        }
+    }
+    
+    // Add small random motion for fluid turbulence
+    x += Math.sin(index * 0.1 + time * 2) * 0.015 * radius;
+    y += Math.cos(index * 0.1 + time * 3) * 0.015 * radius;
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('gravitationalSlingshot', `
+    // Define gravitational bodies
+    const bodies = [
+        { x: -radius * 1, y: -radius * 0.3, mass: 1.0 },
+        { x: radius * 0.6, y: radius * 0.4, mass: 0.7 }
+    ];
+    
+    // Particle orbit parameters
+    const orbitIndex = index % 8; // Different orbital groups
+    const orbitOffset = (orbitIndex / 8) * Math.PI * 2;
+    const particleInOrbit = Math.floor(index / 8) / Math.floor(total / 8);
+    
+    // Time-based phase
+    const basePhase = time * 0.5 + orbitOffset;
+    
+    // Calculate the gravitational dance
+    let x = 0;
+    let y = 0;
+    
+    // Different orbit shapes for different groups
+    const a = 0.8 + (orbitIndex % 3) * 0.2; // Orbit eccentricity
+    const b = 1.0 - (orbitIndex % 2) * 0.3;
+    
+    // Base elliptical orbit
+    const orbitProgress = (basePhase + particleInOrbit * Math.PI * 2) % (Math.PI * 2);
+    x = Math.cos(orbitProgress) * a * radius * 0.5;
+    y = Math.sin(orbitProgress) * b * radius * 0.5;
+    
+    // Apply gravitational influences from the bodies
+    for (let body of bodies) {
+        const dx = x - body.x;
+        const dy = y - body.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Skip if too close to prevent extreme acceleration
+        if (distance < 0.1 * radius) continue;
+        
+        // Calculate gravitational influence
+        const force = body.mass / (distance * distance) * 0.1 * radius;
+        
+        // Apply gravitational force
+        x -= (dx / distance) * force;
+        y -= (dy / distance) * force;
+    }
+    
+    // Shift everything to keep particles away from center
+    x += radius * 0.1;
+    y -= radius * 0.2;
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('particleDiffraction', `
+    // Parameters for the diffraction pattern
+    const sourceX = -radius * 0.8; // Source off to the left
+    const slitY = radius * 0.4; // Slit position
+    const slitGap = radius * 0.1; // Space between slits
+    const slitCount = 3; // Number of slits
+    
+    // Determine which "beam" this particle belongs to
+    const beamIndex = index % total;
+    const beamProgress = (beamIndex / total) * 2 * Math.PI;
+    
+    // Calculate which slit this particle goes through
+    const slitIndex = beamIndex % slitCount;
+    const slitOffset = (slitIndex - (slitCount - 1) / 2) * slitGap;
+    
+    // Wave parameters
+    const waveSpeed = 0.7;
+    const wavelength = 0.3;
+    
+    // Distance from the source (0 to 1)
+    const distanceProgress = (1 + Math.sin(beamProgress)) / 2;
+    
+    // Calculate position based on wave diffraction
+    let x, y;
+    
+    if (distanceProgress < 0.5) {
+        // Before the slit, particles move in straight lines
+        const preSlitProgress = distanceProgress * 2;
+        x = sourceX + (radius * 0.8) * preSlitProgress;
+        y = slitOffset * preSlitProgress;
+    } else {
+        // After the slit, particles create interference pattern
+        const postSlitProgress = (distanceProgress - 0.5) * 2;
+        
+        // Distance from slit
+        const distFromSlit = postSlitProgress * radius;
+        
+        // Wave phase angle - particles from different slits have different phases
+        const phaseOffset = slitIndex * Math.PI * 2 / slitCount;
+        const wavePhase = time * waveSpeed + phaseOffset;
+        
+        // Diffraction angle increases with distance
+        const diffractionAngle = Math.sin(wavePhase) * Math.min(1, postSlitProgress * 3) * 0.3;
+        
+        x = 0 + distFromSlit * Math.cos(diffractionAngle);
+        y = slitOffset + distFromSlit * Math.sin(diffractionAngle);
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('neuralNetwork', `
+    // Neural network parameters
+    const layers = [4, 6, 5, 2]; // Neurons per layer
+    const layerCount = layers.length;
+    const layerSpacing = radius * 1.6 / layerCount;
+    
+    // Determine which path this particle travels
+    const pathIndex = index % 20; // Different connection paths
+    const particleProgress = (Math.floor(index / 20) / Math.floor(total / 20) + time * 0.1) % 1;
+    
+    // Source and target neurons
+    const sourceLayer = Math.floor(pathIndex % (layerCount - 1));
+    const sourceNeuron = pathIndex % layers[sourceLayer];
+    const targetLayer = sourceLayer + 1;
+    const targetNeuron = (pathIndex + Math.floor(pathIndex / 3)) % layers[targetLayer];
+    
+    // Calculate positions of the neurons
+    const getLayerX = (layer) => -radius * 0.7 + layer * layerSpacing;
+    const getNeuronY = (layer, neuron) => {
+        const neuronCount = layers[layer];
+        return ((neuron / (neuronCount - 1)) * 2 - 1) * radius * 0.5;
+    };
+    
+    const sourceX = getLayerX(sourceLayer);
+    const sourceY = getNeuronY(sourceLayer, sourceNeuron);
+    const targetX = getLayerX(targetLayer);
+    const targetY = getNeuronY(targetLayer, targetNeuron);
+    
+    // Add a curved path between neurons
+    const pathCurvature = 0.2;
+    const midX = (sourceX + targetX) / 2;
+    const controlX = midX;
+    const controlY = (sourceY + targetY) / 2 + (Math.sin(pathIndex * 0.7) * pathCurvature * radius);
+    
+    // Bezier curve interpolation
+    const t = particleProgress;
+    const u = 1 - t;
+    const x = u*u*sourceX + 2*u*t*controlX + t*t*targetX;
+    const y = u*u*sourceY + 2*u*t*controlY + t*t*targetY;
+    
+    // Pulse effect
+    const pulsePhase = (pathIndex * 0.1 + time) % 1;
+    const isPulse = Math.abs(particleProgress - pulsePhase) < 0.05;
+    
+    // Pulse causes particles to move slightly away from the path
+    if (isPulse) {
+        const normal = Math.atan2(targetY - sourceY, targetX - sourceX) + Math.PI/2;
+        return {
+            x: x + Math.cos(normal) * 0.03 * radius,
+            y: (y + Math.sin(normal) * 0.03 * radius) * aspectRatio
+        };
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('maxwellsDemon', `
+    // Two-chamber system
+    const chamberWidth = radius * 0.8;
+    const chamberHeight = radius * 0.7;
+    const wallX = 0; // Central dividing wall
+    
+    // Demon's gate
+    const gateY = 0;
+    const gateSize = radius * 0.1;
+    const gateOpen = (Math.sin(time) + 1) / 2 > 0.7; // Gate opens periodically
+    
+    // Determine which chamber this particle belongs to
+    const chamberIndex = index % 2; // 0 = left, 1 = right
+    const particleInChamber = Math.floor(index / 2) / Math.floor(total / 2);
+    
+    // Left chamber has slower particles (cold), right has faster ones (hot)
+    const speedFactor = chamberIndex === 0 ? 1.0 : 2.0;
+    
+    // Calculate particle initial position in the chamber
+    let startX = (chamberIndex === 0 ? -1 : 1) * (chamberWidth / 2);
+    let startY = (particleInChamber * 2 - 1) * chamberHeight;
+    
+    // Calculate movement angle based on index
+    const particleAngle = index * 0.1 + time * speedFactor;
+    
+    // Movement delta
+    const moveDistance = 0.1 * radius * speedFactor;
+    let deltaX = Math.cos(particleAngle) * moveDistance;
+    let deltaY = Math.sin(particleAngle) * moveDistance;
+    
+    // Potential position
+    let newX = startX + deltaX;
+    let newY = startY + deltaY;
+    
+    // Handle wall collisions
+    if (newX > chamberWidth || newX < -chamberWidth) {
+        deltaX = -deltaX; // Bounce off side walls
+        newX = startX + deltaX;
+    }
+    
+    if (newY > chamberHeight || newY < -chamberHeight) {
+        deltaY = -deltaY; // Bounce off top/bottom
+        newY = startY + deltaY;
+    }
+    
+    // Handle central wall collision, except at the gate
+    const nearGate = Math.abs(newY - gateY) < gateSize;
+    if (Math.abs(newX - wallX) < 0.02 * radius && !nearGate) {
+        deltaX = -deltaX; // Bounce off central wall
+        newX = startX + deltaX;
+    }
+    
+    // Demon's gate logic - allow certain particles through the gate
+    if (nearGate && Math.abs(newX - wallX) < 0.05 * radius) {
+        if (gateOpen) {
+            // When gate is open, let particles through
+            // Particles can change chambers
+        } else {
+            // Gate is closed, bounce off
+            deltaX = -deltaX;
+            newX = startX + deltaX;
+        }
+    }
+    
+    return { x: newX, y: newY * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('dataStreams', `
+    // Data stream parameters
+    const streamCount = 5;
+    const streamSpacing = radius * 0.3;
+    const streamSpeed = 0.7;
+    
+    // Packet parameters
+    const packetSize = 0.05;
+    const packetSpacing = 0.2;
+    
+    // Determine which stream this particle belongs to
+    const streamIndex = index % streamCount;
+    const particleInStream = Math.floor(index / streamCount) / Math.floor(total / streamCount);
+    
+    // Generate a stream path with some variability
+    const streamY = (streamIndex - (streamCount - 1) / 2) * streamSpacing;
+    
+    // Calculate stream curve using sine waves with different frequencies
+    const streamAmplitude = 0.1 * radius;
+    const streamFreq1 = 1 + streamIndex * 0.2;
+    const streamFreq2 = 2.5 - streamIndex * 0.15;
+    
+    // Stream position along x-axis
+    const baseX = -radius + (particleInStream + time * streamSpeed) % 2 * radius * 2;
+    
+    // Calculate position on the curved stream
+    const streamCurve = Math.sin(baseX * 0.5 * streamFreq1 + time) * 
+                      Math.cos(baseX * 0.3 * streamFreq2) * 
+                      streamAmplitude;
+    
+    // Group particles into data packets
+    const packetPhase = (particleInStream + time * streamSpeed) % 1;
+    const packetProgress = packetPhase % packetSpacing;
+    const inPacket = packetProgress < packetSize;
+    
+    // Position on stream
+    let x = baseX;
+    let y = streamY + streamCurve;
+    
+    // When in a packet, particles cluster together
+    if (inPacket) {
+        const packetOffset = (index * 53.37) % (2 * Math.PI); // Semi-random offset
+        const clusterRadius = 0.02 * radius;
+        
+        x += Math.cos(packetOffset) * clusterRadius;
+        y += Math.sin(packetOffset) * clusterRadius;
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('brownianMotion', `
+    // Containment area
+    const areaX = -radius * 0;
+    const areaY = radius * 0;
+    const areaWidth = radius * 0.9;
+    const areaHeight = radius * 0.7;
+    
+    // Get a deterministic but seemingly random position using noise
+    const noise = (x, y) => {
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+        return Math.sin(X * 12.9898 + Y * 78.233) * 43758.5453 % 1;
+    };
+    
+    // Generate position that changes over time but is consistent per particle
+    const noiseScale = 0.5;
+    const timeScale = 1.5;
+    
+    // Generate noise offsets in 4D space-time
+    const nx = noise(index * noiseScale, time * timeScale);
+    const ny = noise(index * noiseScale + 100, time * timeScale);
+    
+    // Convert noise to position within the containment area
+    const x = areaX + areaWidth * (nx * 0.8 + 0.1);
+    const y = areaY + areaHeight * (ny * 0.8 + 0.1);
+    
+    // Occasional particle collisions cause sudden direction changes
+    const collisionChance = (noise(index, Math.floor(time * 4)) > 0.97);
+    
+    if (collisionChance) {
+        // Simulate collision with another particle
+        const collisionAngle = noise(index, time * 10) * Math.PI * 2;
+        const collisionForce = 0.06 * radius;
+        
+        return {
+            x: x + Math.cos(collisionAngle) * collisionForce,
+            y: (y + Math.sin(collisionAngle) * collisionForce) * aspectRatio
+        };
+    }
+    
+    return { x, y: y * aspectRatio };
+`);
+
+        ParticleFunctions.registerBuiltIn('spikeGrowth', `
+    // Rain parameters
+    const columnCount = 20;  // Increased number of columns
+    const columnSpacing = radius * 1.8 / columnCount;
+    
+    // Determine which column this particle belongs to
+    const columnIndex = index % columnCount;
+    const particleInColumn = Math.floor(index / columnCount) / Math.floor(total / columnCount);
+    
+    // Column starting positions - spread across the screen
+    const startX = -radius * 0.8 + columnIndex * columnSpacing;
+    
+    // Deterministic random values for this column/particle
+    const randomSeed = columnIndex * 43758.5453 + 12345.67;
+    const randomValue = Math.sin(randomSeed) * 0.5 + 0.5;  // 0-1 range
+    
+    // Different columns have different speeds and lengths
+    const fallSpeed = 0.2 + randomValue * 0.5;
+    const columnLength = 0.3 + randomValue * 0.5;  // How much of the column is filled with particles
+    
+    // Offset each column's start time
+    const columnOffset = (columnIndex * 13.7) % 1;
+    const columnTime = (time + columnOffset) % 3;  // Cycle every 3 seconds
+    
+    // Calculate position in the spike
+    let rainPhase = (particleInColumn * columnLength + columnTime * fallSpeed) % 1;
+    
+    // Fade out at different heights - randomized stopping points
+    const fadeOutHeight = -0.7 + randomValue * 1.3;  // Between -0.7 and 0.6
+    
+    // When the particle gets below its stopping height, reset it off-screen
+    if (-rainPhase * 2 + 1 < fadeOutHeight) {
+        // Instead of continuing downward, move back to top off-screen
+        rainPhase = -0.2 - randomValue * 0.2;
+    }
+    
+    // Vertical position - falling from top to bottom
+    let y = rainPhase * 2 - 1;  // Map 0-1 to +1 to -1
+    
+    // Add subtle variations to each column
+    const curvature = (Math.sin(columnIndex * 0.4) * 0.1) * Math.sin(rainPhase * Math.PI);
+    
+    // Group particles into "character" clusters with varying density
+    const charHeight = 0.02 + randomValue * 0.03;
+    const charIndex = Math.floor(rainPhase / charHeight);
+    
+    // Calculate final position
+    let x = startX + curvature * radius;
+    
+    // Add slight horizontal drift based on position and time
+    const drift = Math.sin(y * 3 + time + columnIndex) * 0.01 * radius;
+    
+    // Leading character glows brighter (handled elsewhere)
+    const isLeadingChar = rainPhase % columnLength < charHeight;
+    
+    // Occasionally skip some character positions for more natural look
+    const skipChar = (charIndex * columnIndex) % 7 === 0;
+    if (skipChar) {
+        y -= charHeight * 1.5;  // Move this particle down to create a gap
+    }
+    
+    return { x: x + drift, y: y * aspectRatio };
+`);
+
+
+        ParticleFunctions.registerBuiltIn('superconductingFlux', `
+    // Superconductor parameters
+    const ringRadius = radius * 0.7;
+    const ringCenterX = radius * 0.2; // Offset from center
+    const ringCenterY = -radius * 0.1;
+    const fluxDensity = 5; // Number of flux lines
+    
+    // Determine which flux line this particle belongs to
+    const fluxIndex = index % fluxDensity;
+    const particleInFlux = Math.floor(index / fluxDensity) / Math.floor(total / fluxDensity);
+    
+    // Calculate base position on the ring
+    const ringPhase = fluxIndex / fluxDensity * Math.PI * 2;
+    const ringProgress = (particleInFlux + time * 0.2) % 1;
+    const ringAngle = ringPhase + ringProgress * Math.PI * 2;
+    
+    // Calculate magnetic field strength (oscillating)
+    const magneticField = Math.sin(time * 0.5) * 0.5 + 0.5;
+    
+    // In a superconductor, magnetic flux gets quantized into vortices
+    const vortexEffect = Math.sin(ringProgress * Math.PI * 10 + time * 3) * 
+                         0.05 * radius * magneticField;
+    
+    // Calculate position on the ring
+    const x = ringCenterX + Math.cos(ringAngle) * (ringRadius + vortexEffect);
+    const y = ringCenterY + Math.sin(ringAngle) * (ringRadius + vortexEffect);
+    
+    // Particles also spiral around the flux lines
+    const spiralRadius = 0.02 * radius;
+    const spiralFrequency = 20;
+    const spiralPhase = ringProgress * spiralFrequency + time * 5;
+    const spiralX = Math.cos(spiralPhase) * spiralRadius;
+    const spiralY = Math.sin(spiralPhase) * spiralRadius;
+    
+    return { x: x + spiralX, y: (y + spiralY) * aspectRatio };
+`);
 
         // Particle Configuration System
         const ConfigSchema = {
@@ -2334,6 +3149,15 @@
             }
         }
 
+        function cleanup() {
+            const gl = STATE.render.gl;
+            gl.deleteBuffer(STATE.render.buffers.position);
+            gl.deleteBuffer(STATE.render.buffers.size);
+            gl.deleteBuffer(STATE.render.buffers.color);
+            gl.deleteProgram(STATE.render.program);
+            initGL();
+        }
+
         const TIMER = {
             endTime: 0,
             startTime: 0,
@@ -2620,6 +3444,7 @@
             });
 
             document.getElementById('startTimer').addEventListener('click', () => {
+                cleanup();
                 const minutes = parseInt(document.getElementById('minutes').value);
                 const seconds = parseInt(document.getElementById('seconds').value);
 
@@ -2797,21 +3622,23 @@
 
             document.getElementById('updateFunction').addEventListener('click', function () {
                 const functionName = document.getElementById('particleFunctionSelect').value;
-                let functionBody = document.getElementById('particleFunctionEditor').value;
 
+                if (ParticleFunctions.builtInFunctions.has(functionName)) {
+                    alert(`"${functionName}" is a built-in function and cannot be modified. Please save your changes as a new function instead.`);
+                    return;
+                }
+
+                // Rest of your update code...
+                let functionBody = document.getElementById('particleFunctionEditor').value;
                 functionBody = trimCodeWhitespace(functionBody);
 
                 ParticleFunctions.register(functionName, functionBody);
-
-                // Save to localStorage
                 localStorage.setItem(`particle_function_${functionName}`, functionBody);
 
-                // If timer is running, update display
                 if (STATE.timer.running) {
                     TIMER.update();
                 }
 
-                // Show feedback
                 const button = this;
                 const originalText = button.textContent;
                 button.textContent = "Updated!";
