@@ -1897,6 +1897,10 @@
             const selectedFont = STATE.config.text.font;
             const isBold = STATE.config.text.isBold;
             const fontWeight = isBold ? 'bold' : 'normal';
+            const verticalOffset = STATE.config.text.verticalOffset || 1.0;
+
+            // Additional vertical scaling factor to make text taller
+            const verticalScaleFactor = 1.5;
 
             const textCanvas = document.createElement('canvas');
             const ctx = textCanvas.getContext('2d');
@@ -1908,37 +1912,24 @@
 
             // Get text metrics for proper sizing
             const textMetrics = ctx.measureText(text);
-            // Use TextMetrics to calculate height (approximate since there's no direct height property)
-            // fontBoundingBoxAscent and fontBoundingBoxDescent are available in modern browsers
-            const fontHeight = textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent || textSize * 1.2;
 
-            // Calculate canvas dimensions with enough padding
+            // Calculate canvas dimensions with padding
             let canvasWidth, canvasHeight;
 
             if (isTimeFormat) {
-                // Time format - use fixed width based on maximum possible time
-                const maxWidthMetrics = ctx.measureText("9:99");
-                const maxWidth = maxWidthMetrics.width;
-                const padding = maxWidth * 0.2; // 20% padding
-
-                canvasWidth = maxWidth + padding;
-                canvasHeight = fontHeight * 1.5; // 50% padding vertically
+                // For time format, use a consistent width
+                const maxWidth = ctx.measureText("9:99").width;
+                canvasWidth = maxWidth * 1.2; // 20% padding
+                canvasHeight = textSize * 1.5;
             } else {
-                // End text - maintain natural aspect ratio
-                const endTextWidth = textMetrics.width;
-                const padding = endTextWidth * 0.2; // 20% padding
-
-                canvasWidth = endTextWidth + padding;
-                canvasHeight = fontHeight * 1.5; // 50% padding vertically
+                // For end text, use its natural width
+                canvasWidth = textMetrics.width * 1.2; // 20% padding
+                canvasHeight = textSize * 1.5;
             }
 
-            // Ensure minimum dimensions and convert to integers
-            canvasWidth = Math.max(Math.ceil(canvasWidth), 32);
-            canvasHeight = Math.max(Math.ceil(canvasHeight), 32);
-
             // Set canvas dimensions
-            textCanvas.width = canvasWidth;
-            textCanvas.height = canvasHeight;
+            textCanvas.width = Math.ceil(canvasWidth);
+            textCanvas.height = Math.ceil(canvasHeight);
 
             // Reset context after canvas resize
             ctx.font = `${fontWeight} ${textSize}px "${selectedFont}"`;
@@ -1951,19 +1942,30 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
 
-            // Calculate appropriate scale
-            const scale = isTimeFormat ? textScale : endTextScale;
+            // Use the appropriate scale based on text type
+            const baseScale = isTimeFormat ? textScale : endTextScale;
 
-            // Safe pixel sampling with bounds checking
+            // Calculate aspect ratio correction
+            const canvasAspect = textCanvas.width / textCanvas.height;
+
+            // Correct the aspect ratio to maintain original text proportions
+            let xScale, yScale;
+
+            if (canvasAspect < 1) {
+                // Canvas is taller than wide, scale x to compensate
+                xScale = baseScale / canvasAspect; // Make x wider
+                yScale = baseScale * verticalScaleFactor; // Make y taller by the scale factor
+            } else {
+                // Canvas is wider than tall, scale y to compensate
+                xScale = baseScale;
+                yScale = (baseScale / canvasAspect) * verticalScaleFactor; // Make y taller
+            }
+
+            // Safe pixel sampling
             function samplePixel(x, y) {
-                if (x < 0 || x >= textCanvas.width || y < 0 || y >= textCanvas.height) {
-                    return 0; // Return 0 alpha (transparent) for out-of-bounds
-                }
-                const index = (y * textCanvas.width + x) * 4 + 3; // Alpha channel
-                if (index < 0 || index >= imageData.length) {
-                    return 0; // Safeguard against array out of bounds
-                }
-                return imageData[index];
+                if (x < 0 || x >= textCanvas.width || y < 0 || y >= textCanvas.height) return 0;
+                const index = (y * textCanvas.width + x) * 4 + 3;
+                return index >= 0 && index < imageData.length ? imageData[index] : 0;
             }
 
             switch (STATE.config.behavior.ordering) {
@@ -1972,8 +1974,8 @@
                         for (let y = 0; y < textCanvas.height; y += density) {
                             if (samplePixel(x, y) > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * scale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * scale
+                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale * verticalOffset
                                 });
                             }
                         }
@@ -1985,8 +1987,8 @@
                         for (let x = 0; x < textCanvas.width; x += density) {
                             if (samplePixel(x, y) > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * scale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * scale
+                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale * verticalOffset
                                 });
                             }
                         }
@@ -1999,8 +2001,8 @@
                         for (let y = 0; y < textCanvas.height; y += density) {
                             if (samplePixel(x, y) > 128) {
                                 validPixels.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * scale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * scale
+                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale * verticalOffset
                                 });
                             }
                         }
@@ -2044,6 +2046,8 @@
 
             return points;
         }
+
+
 
 
 
