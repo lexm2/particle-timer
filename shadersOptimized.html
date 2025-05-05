@@ -1666,8 +1666,8 @@
                     0.0001
                 );
 
-                arrays.dampings[i] 
-                    config.particles.physics.damping.base +
+                arrays.dampings[i]
+                config.particles.physics.damping.base +
                     Math.random() * config.particles.physics.damping.variation;
 
                 arrays.particleSizes[i] = config.particles.appearance.size.base +
@@ -1901,43 +1901,40 @@
             const textCanvas = document.createElement('canvas');
             const ctx = textCanvas.getContext('2d');
 
-            // Use a monospace font for consistent character widths
+            // Set font for text measurements
             ctx.font = `${fontWeight} ${textSize}px "${selectedFont}"`;
 
             const isTimeFormat = /^\d+:\d+$/.test(text);
 
-            // Set a reference aspect ratio to maintain consistent proportions
-            const referenceWidth = ctx.measureText("8:88").width;
-            const referenceHeight = textSize;
-            const referenceAspectRatio = referenceWidth / referenceHeight;
+            // Get text metrics for proper sizing
+            const textMetrics = ctx.measureText(text);
+            // Use TextMetrics to calculate height (approximate since there's no direct height property)
+            // fontBoundingBoxAscent and fontBoundingBoxDescent are available in modern browsers
+            const fontHeight = textMetrics.fontBoundingBoxAscent + textMetrics.fontBoundingBoxDescent || textSize * 1.2;
 
-            let canvasWidth, canvasHeight, scaleFactor;
+            // Calculate canvas dimensions with enough padding
+            let canvasWidth, canvasHeight;
 
             if (isTimeFormat) {
                 // Time format - use fixed width based on maximum possible time
                 const maxWidthMetrics = ctx.measureText("9:99");
                 const maxWidth = maxWidthMetrics.width;
-                const padding = maxWidth * 0.1; // 10% padding
+                const padding = maxWidth * 0.2; // 20% padding
 
-                canvasWidth = maxWidth + padding * 2;
-                canvasHeight = textSize * 1.5; // Enough height with some padding
-
-                // Scale factor remains 1.0 for time format as it's our reference
-                scaleFactor = textScale;
+                canvasWidth = maxWidth + padding;
+                canvasHeight = fontHeight * 1.5; // 50% padding vertically
             } else {
-                // End text - maintain aspect ratio relative to the reference
-                const endTextMetrics = ctx.measureText(text);
-                const endTextWidth = endTextMetrics.width;
-                const endTextPadding = endTextWidth * 0.1; // 10% padding
+                // End text - maintain natural aspect ratio
+                const endTextWidth = textMetrics.width;
+                const padding = endTextWidth * 0.2; // 20% padding
 
-                canvasWidth = endTextWidth + endTextPadding * 2;
-                canvasHeight = textSize * 1.5;
-
-                // Calculate a scale factor that maintains aspect ratio
-                // This ensures the end text has the same proportions as the timer
-                const endTextAspectRatio = canvasWidth / canvasHeight;
-                scaleFactor = endTextScale * (referenceAspectRatio / endTextAspectRatio);
+                canvasWidth = endTextWidth + padding;
+                canvasHeight = fontHeight * 1.5; // 50% padding vertically
             }
+
+            // Ensure minimum dimensions and convert to integers
+            canvasWidth = Math.max(Math.ceil(canvasWidth), 32);
+            canvasHeight = Math.max(Math.ceil(canvasHeight), 32);
 
             // Set canvas dimensions
             textCanvas.width = canvasWidth;
@@ -1954,18 +1951,29 @@
             const points = [];
             const imageData = ctx.getImageData(0, 0, textCanvas.width, textCanvas.height).data;
 
-            // Calculate x and y scale factors to maintain aspect ratio
-            const xScale = isTimeFormat ? textScale : endTextScale;
-            const yScale = xScale; // Use same scale to maintain aspect ratio
+            // Calculate appropriate scale
+            const scale = isTimeFormat ? textScale : endTextScale;
+
+            // Safe pixel sampling with bounds checking
+            function samplePixel(x, y) {
+                if (x < 0 || x >= textCanvas.width || y < 0 || y >= textCanvas.height) {
+                    return 0; // Return 0 alpha (transparent) for out-of-bounds
+                }
+                const index = (y * textCanvas.width + x) * 4 + 3; // Alpha channel
+                if (index < 0 || index >= imageData.length) {
+                    return 0; // Safeguard against array out of bounds
+                }
+                return imageData[index];
+            }
 
             switch (STATE.config.behavior.ordering) {
                 case 'vertical':
                     for (let x = 0; x < textCanvas.width; x += density) {
                         for (let y = 0; y < textCanvas.height; y += density) {
-                            if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
+                            if (samplePixel(x, y) > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale
+                                    x: ((x / textCanvas.width) * 2 - 1) * scale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * scale
                                 });
                             }
                         }
@@ -1975,10 +1983,10 @@
                 case 'horizontal':
                     for (let y = 0; y < textCanvas.height; y += density) {
                         for (let x = 0; x < textCanvas.width; x += density) {
-                            if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
+                            if (samplePixel(x, y) > 128) {
                                 points.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale
+                                    x: ((x / textCanvas.width) * 2 - 1) * scale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * scale
                                 });
                             }
                         }
@@ -1989,16 +1997,15 @@
                     const validPixels = [];
                     for (let x = 0; x < textCanvas.width; x += density) {
                         for (let y = 0; y < textCanvas.height; y += density) {
-                            if (imageData[(y * textCanvas.width + x) * 4 + 3] > 128) {
+                            if (samplePixel(x, y) > 128) {
                                 validPixels.push({
-                                    x: ((x / textCanvas.width) * 2 - 1) * xScale,
-                                    y: (-(y / textCanvas.height) * 2 + 1) * yScale
+                                    x: ((x / textCanvas.width) * 2 - 1) * scale,
+                                    y: (-(y / textCanvas.height) * 2 + 1) * scale
                                 });
                             }
                         }
                     }
 
-                    // Rest of optimized case remains the same...
                     if (STATE.particles.previousPoints.size === 0) {
                         return validPixels;
                     }
@@ -2020,8 +2027,17 @@
 
                     const remainingPoints = validPixels.filter((_, i) => !usedPoints.has(i));
                     Array.from(unassignedIndices).forEach((index, i) => {
-                        result[index] = remainingPoints[i];
+                        if (i < remainingPoints.length) {
+                            result[index] = remainingPoints[i];
+                        }
                     });
+
+                    // Fill any undefined entries with default points
+                    for (let i = 0; i < result.length; i++) {
+                        if (!result[i]) {
+                            result[i] = { x: 0, y: 0 };
+                        }
+                    }
 
                     return result;
             }
@@ -2069,11 +2085,11 @@
 
                 // Update stats display
                 STATE.stats.element.textContent = `
-            FPS: ${STATE.stats.fps}
-            Particles: ${STATE.stats.particleCount}
-            Draw Time: ${STATE.stats.drawTime.toFixed(2)}ms
-            Physics Time: ${STATE.stats.physicsTime.toFixed(2)}ms
-        `;
+                FPS: ${STATE.stats.fps}
+                Particles: ${STATE.stats.particleCount}
+                Draw Time: ${STATE.stats.drawTime.toFixed(2)}ms
+                Physics Time: ${STATE.stats.physicsTime.toFixed(2)}ms
+            `;
             }
 
             requestAnimationFrame(draw);
