@@ -2341,6 +2341,7 @@
                 this.startTime = (+new Date);
                 this.isFirstTick = true;
                 this.paused = false;
+                STATE.timer.paused = false;
                 this.update();
             },
 
@@ -2566,6 +2567,10 @@
             document.getElementById('startTimer').addEventListener('click', () => {
                 const minutes = parseInt(document.getElementById('minutes').value);
                 const seconds = parseInt(document.getElementById('seconds').value);
+
+                STATE.timer.paused = false;
+                TIMER.paused = false;
+                document.getElementById('pauseButton').textContent = 'Pause';
 
                 initializeWithConfig(getConfigFromInputs(), minutes, seconds);
                 TIMER.start(minutes, seconds);
