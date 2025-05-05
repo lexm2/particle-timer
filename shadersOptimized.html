@@ -457,11 +457,40 @@
 
         // Add some dynamic, time-based functions
         ParticleFunctions.registerBuiltIn('pulsatingCircle', `
-            return {
-                x: Math.cos(angle) * radius * (1 + 0.3 * Math.sin(time)),
-                y: Math.sin(angle) * radius * aspectRatio * (1 + 0.3 * Math.cos(time))
-            };
-        `);
+    // Create a pulse that repeats every second
+    const pulsePhase = (time % 1);
+    
+    // Fast out, slow in easing function
+    // This creates a quick expansion followed by a slower contraction
+    const easeOutIn = (t) => {
+        // Fast expansion (first 30% of the cycle)
+        if (t < 0.3) {
+            // Quadratic ease-out for quick expansion
+            return 1 - (1 - t/0.3) * (1 - t/0.3);
+        } 
+        // Slow contraction (remaining 70% of the cycle)
+        else {
+            // Cubic ease-in for slower contraction
+            const normalized = (t - 0.3) / 0.7;
+            return 1 - normalized * normalized * normalized;
+        }
+    };
+    
+    // Calculate pulse size multiplier
+    const baseSize = 0.7;  // Minimum size
+    const pulseAmount = 0.6;  // Maximum additional size (more explosive)
+    const sizeMultiplier = baseSize + pulseAmount * easeOutIn(pulsePhase);
+    
+    // Add a slight wave effect for more visual interest
+    const waveEffect = 0.05 * Math.sin(angle * 3 + time * 2);
+    
+    // Calculate final position with the pulse effect
+    return {
+        x: Math.cos(angle) * radius * (sizeMultiplier + waveEffect),
+        y: Math.sin(angle) * radius * aspectRatio * (sizeMultiplier + waveEffect)
+    };
+`);
+
 
         ParticleFunctions.registerBuiltIn('dynamicSpiral', `
             const distance = (index / total) * radius * (1 + 0.2 * Math.sin(time));
@@ -902,6 +931,9 @@
 `);
 
         ParticleFunctions.registerBuiltIn('gravitationalSlingshot', `
+
+    const xOffset = 0.4;
+    const yOffset = -0.1;
     // Define gravitational bodies
     const bodies = [
         { x: -radius * 1, y: -radius * 0.3, mass: 1.0 },
@@ -950,7 +982,7 @@
     x += radius * 0.1;
     y -= radius * 0.2;
     
-    return { x, y: y * aspectRatio };
+    return { x: y * aspectRatio + xOffset, y: x + yOffset};
 `);
 
         ParticleFunctions.registerBuiltIn('particleDiffraction', `
@@ -1289,8 +1321,8 @@
         ParticleFunctions.registerBuiltIn('superconductingFlux', `
     // Superconductor parameters
     const ringRadius = radius * 0.7;
-    const ringCenterX = radius * 0.2; // Offset from center
-    const ringCenterY = -radius * 0.1;
+    const ringCenterX = 0; // Offset from center
+    const ringCenterY = 0;
     const fluxDensity = 5; // Number of flux lines
     
     // Determine which flux line this particle belongs to
@@ -1391,7 +1423,7 @@
                     extraParticleMode: {
                         type: 'select',
                         options: Object.keys(ParticleFunctions.registry),
-                        default: 'circle'
+                        default: 'progressCircle'
                     },
                     tickSyncRendering: { type: 'boolean', default: false }
                 }
@@ -1654,8 +1686,8 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "circle",
-                    radius: 0.8
+                    extraParticleMode: "progressCircle",
+                    radius: 0.6
                 }
             },
 
@@ -1699,8 +1731,8 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "center",
-                    radius: 2
+                    extraParticleMode: "orbit",
+                    radius: 3
                 }
             },
             sunset: {
@@ -1775,9 +1807,9 @@
                     font: "Impact",
                 },
                 behavior: {
-                    extraParticleMode: "center",
+                    extraParticleMode: "pulsatingCircle",
                     ordering: "horizontal",
-                    radius: 1.5
+                    radius: 1
                 }
             },
 
@@ -1796,13 +1828,17 @@
                     },
                     physics: {
                         acceleration: {
-                            base: 2,
+                            base: 3,
                             variation: 3
                         },
                         damping: {
                             base: 0.98,
                             variation: 0.01
                         }
+                    },
+                    mouseBehavior: {
+                        pushForce: 2500,
+                        pushRadius: 150
                     }
                 },
                 text: {
@@ -1873,7 +1909,11 @@
                             base: 3.5,
                             variation: 2.5
                         }
-                    }
+                    },
+                    mouseBehavior: {
+                        pushForce: 2500,
+                        pushRadius: 150
+                    },
                 },
                 text: {
                     size: 45,
@@ -1884,7 +1924,7 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "circle",
+                    extraParticleMode: "progressCircle",
                     radius: 0.7
                 }
             },
@@ -1955,7 +1995,8 @@
                 },
                 behavior: {
                     ordering: "optimized",
-                    extraParticleMode: "center"
+                    extraParticleMode: "superconductingFlux",
+                    radius: 1.5
                 }
             },
 
@@ -1982,7 +2023,7 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "maintain",
+                    extraParticleMode: "particleDiffraction",
                     radius: 1.2
                 }
             },
@@ -2018,8 +2059,8 @@
                 },
                 behavior: {
                     ordering: "optimized", // Methodical for space-like precision
-                    extraParticleMode: "spiral",
-                    radius: 1.8
+                    extraParticleMode: "orbit",
+                    radius: 1.5
                 }
             },
 
@@ -2052,7 +2093,7 @@
                 },
                 behavior: {
                     ordering: "horizontal", // Glitch-like for falling leaves effect
-                    extraParticleMode: "wave",
+                    extraParticleMode: "gravitationalSlingshot",
                     radius: 1.1
                 }
             },
@@ -2118,8 +2159,8 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "circle",
-                    radius: 1
+                    extraParticleMode: "quantumWaveFunction",
+                    radius: 2
                 }
             },
 
@@ -2150,7 +2191,7 @@
                 },
                 behavior: {
                     ordering: "optimized",
-                    extraParticleMode: "maintain"
+                    extraParticleMode: "offScreenCircle",
                 }
             },
 
@@ -2176,8 +2217,8 @@
                     isBold: false
                 },
                 behavior: {
-                    ordering: "horizontal", // Glitch effect for contrast
-                    extraParticleMode: "test"
+                    ordering: "horizontal",
+                    extraParticleMode: "fountain"
                 }
             },
 
@@ -2203,9 +2244,9 @@
                     isBold: true
                 },
                 behavior: {
-                    ordering: "horizontal", // Glitch effect
-                    extraParticleMode: "spiral",
-                    radius: 1.1
+                    ordering: "vertical", // Glitch effect
+                    extraParticleMode: "brownianMotion",
+                    radius: 2
                 }
             },
 
@@ -2242,7 +2283,7 @@
                 },
                 behavior: {
                     ordering: "optimized",
-                    extraParticleMode: "circle",
+                    extraParticleMode: "progressCircle",
                     radius: 0.9
                 }
             },
@@ -2276,7 +2317,7 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "wave",
+                    extraParticleMode: "fluidDynamics",
                     radius: 1.1
                 }
             },
@@ -2304,7 +2345,8 @@
                 },
                 behavior: {
                     ordering: "vertical",
-                    extraParticleMode: "circle"
+                    extraParticleMode: "magneticField",
+                    radius: 0.9
                 }
             },
 
@@ -2337,8 +2379,8 @@
                 },
                 behavior: {
                     ordering: "horizontal", // Glitch effect for electro theme
-                    extraParticleMode: "spiral",
-                    radius: 1.3
+                    extraParticleMode: "galaxySwirl",
+                    radius: 2
                 }
             }
         };
@@ -2360,10 +2402,12 @@
 
             console.log(`Applying preset: ${presetName}`, preset);
 
+            const defaultConfig = ConfigSchema.createDefault();
+
             saveLastUsedConfig(presetName);
 
             // Set the current config to the selected preset
-            STATE.config = Object.assign({}, preset);
+            STATE.config = deepMerge(defaultConfig, preset);
 
             // Update all UI elements with the preset values
             document.querySelectorAll('[data-config-path]').forEach(input => {
@@ -2417,6 +2461,24 @@
             }
 
             console.log("Preset applied successfully");
+        }
+
+        function deepMerge(target, source) {
+            const result = { ...target };
+
+            Object.keys(source).forEach(key => {
+                if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                    if (target[key] && typeof target[key] === 'object') {
+                        result[key] = deepMerge(target[key], source[key]);
+                    } else {
+                        result[key] = { ...source[key] };
+                    }
+                } else {
+                    result[key] = source[key];
+                }
+            });
+
+            return result;
         }
 
         function rgbToHex(rgbArray) {
@@ -3344,6 +3406,28 @@
             `;
             menu.appendChild(timerSection);
 
+
+
+            // Add preset style section
+            const presetSection = document.createElement('div');
+            presetSection.className = 'section';
+            presetSection.innerHTML = `
+                <h3>Particle Style</h3>
+                <div style="display: flex; align-items: center; margin-bottom: 10px; max-width: 300px;">
+                    <select id="presetStyle" style="width: auto; min-width: 150px; margin-right: 10px;">
+                        <!-- Options will be added dynamically -->
+                    </select>
+                    <button id="deletePreset" style="background: #d44; padding: 5px 10px;">Delete</button>
+                </div>
+                <div id="presetInfo" style="font-size: 0.8em; font-style: italic; margin-bottom: 10px;">
+                    Built-in presets cannot be deleted.
+                </div>
+            `;
+
+            menu.appendChild(presetSection);
+            const presetSelect = document.getElementById('presetStyle');
+
+
             const particleFunctionSection = document.createElement('div');
             particleFunctionSection.className = 'section';
             particleFunctionSection.innerHTML = `
@@ -3381,25 +3465,6 @@
             `;
             menu.appendChild(particleFunctionSection);
 
-            // Add preset style section
-            const presetSection = document.createElement('div');
-            presetSection.className = 'section';
-            presetSection.innerHTML = `
-                <h3>Particle Style</h3>
-                <div style="display: flex; align-items: center; margin-bottom: 10px; max-width: 300px;">
-                    <select id="presetStyle" style="width: auto; min-width: 150px; margin-right: 10px;">
-                        <!-- Options will be added dynamically -->
-                    </select>
-                    <button id="deletePreset" style="background: #d44; padding: 5px 10px;">Delete</button>
-                </div>
-                <div id="presetInfo" style="font-size: 0.8em; font-style: italic; margin-bottom: 10px;">
-                    Built-in presets cannot be deleted.
-                </div>
-            `;
-
-            menu.appendChild(presetSection);
-
-            const presetSelect = document.getElementById('presetStyle');
 
             Object.keys(PRESETS).forEach(presetName => {
                 const option = document.createElement('option');
@@ -3525,7 +3590,19 @@
             });
 
             document.getElementById('presetStyle').addEventListener('change', (e) => {
-                applyPreset(e.target.value);
+                const presetName = e.target.value;
+
+                applyPreset(presetName);
+                const preset = PRESETS[presetName] || STATE.presets.saved.get(presetName);
+
+                if (preset && preset.behavior && preset.behavior.extraParticleMode) {
+                    const functionSelect = document.getElementById('particleFunctionSelect');
+                    if (Array.from(functionSelect.options).some(opt => opt.value === preset.behavior.extraParticleMode)) {
+                        functionSelect.value = preset.behavior.extraParticleMode;
+                        document.getElementById('particleFunctionEditor').value =
+                            formatCode(ParticleFunctions.registry[preset.behavior.extraParticleMode]);
+                    }
+                }
             });
 
             document.getElementById('deletePreset').addEventListener('click', () => {
@@ -3615,6 +3692,9 @@
                 const functionName = this.value;
                 let code = ParticleFunctions.registry[functionName];
                 code = formatCode(code);
+
+                document.getElementById('behavior_extraParticleMode').value = functionName;
+                STATE.config.behavior.extraParticleMode = functionName;
 
                 document.getElementById('particleFunctionEditor').value = code;
             });
