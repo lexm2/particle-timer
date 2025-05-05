@@ -702,9 +702,9 @@
 `);
 
         ParticleFunctions.registerBuiltIn('quantumWaveFunction', `
-    // Position atom off to the side of the screen
-    const atomX = -radius * 0.5;
-    const atomY = radius * 0.3;
+    // Position atom center
+    const atomX = 0;
+    const atomY = 0;
     
     // Quantum parameters
     const n = 1 + Math.floor((index % 4) / 2); // Principal quantum number
