@@ -291,9 +291,7 @@
                 };
 
                 if (TIMER.endTime) {
-                    const startTime = TIMER.endTime - ((TIMER.msLeft > 0) ? TIMER.msLeft : 0);
-                    timerInfo.totalDuration = TIMER.endTime - startTime;
-
+                    timerInfo.totalDuration = TIMER.endTime - TIMER.startTime;
                     timerInfo.progress = Math.max(0, Math.min(1, TIMER.msLeft / timerInfo.totalDuration));
                 }
 
@@ -333,27 +331,38 @@
         };
 
         ParticleFunctions.register('progressCircle', `
-            // Get progress directly from the timer object
-            const progressPercentage = timer.progress;
+            // Get progress directly from the timer object or calculate it
+            let progressPercentage;
+            
+            if (timer && typeof timer.progress === 'number') {
+                // Use provided progress if available
+                progressPercentage = timer.progress;
+            } else if (typeof TIMER !== 'undefined' && TIMER.msLeft && TIMER.initialDuration) {
+                // Calculate directly if we have the needed values
+                progressPercentage = Math.max(0, Math.min(1, TIMER.msLeft / TIMER.initialDuration));
+            } else {
+                // Fallback to a simple calculation if all else fails
+                const totalTimeEstimate = 60 * 1000; // Assume 1 minute timer
+                progressPercentage = Math.max(0, Math.min(1, (TIMER.msLeft || 0) / totalTimeEstimate));
+            }
+            
+            // Ensure we have a valid value between 0 and 1
+            progressPercentage = Math.max(0.01, Math.min(1, progressPercentage || 0));
             
             // Calculate full circle angle
             const fullCircle = 2 * Math.PI;
             
-            // Only show particles within the remaining percentage of the circle
-            const maxAngle = fullCircle * progressPercentage;
+            // Scale the angle to fit within the progress percentage
+            // This redistributes all particles to fit within the available arc
+            const scaledAngle = angle * progressPercentage;
             
-            // Return null for particles outside the progress range (they won't be shown)
-            if (angle > maxAngle) {
-                // Position them far off-screen so they're not visible
-                return { x: -100, y: -100 };
-            }
-            
-            // For particles within the progress range, position them in a circle
+            // Position particles using the scaled angle
             return {
-                x: Math.cos(angle) * radius,
-                y: Math.sin(angle) * radius * aspectRatio
+                x: Math.cos(scaledAngle) * radius,
+                y: Math.sin(scaledAngle) * radius * aspectRatio
             };
         `);
+
 
         ParticleFunctions.register('circle', `
             return {
@@ -2184,7 +2193,6 @@
             STATE.stats.physicsTime = performance.now() - physicsStart;
 
             if (STATE.particles.activeCount < STATE.particles.count) {
-                // Update time-based patterns for extra particles
                 const mode = STATE.config.behavior.extraParticleMode;
                 const points = [];
                 const remainingPoints = STATE.particles.count - STATE.particles.activeCount;
@@ -2271,6 +2279,7 @@
 
         const TIMER = {
             endTime: 0,
+            startTime: 0,
             msLeft: 0,
             isFirstTick: true,
             text: "",
@@ -2312,6 +2321,7 @@
 
             start(minutes, seconds) {
                 this.endTime = (+new Date) + ((minutes * 60 + seconds) * 1000);
+                this.startTime = (+new Date);
                 this.isFirstTick = true;
                 this.paused = false;
                 if (this.timeoutId) {
