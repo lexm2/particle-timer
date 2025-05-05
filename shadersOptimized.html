@@ -532,7 +532,8 @@
                         type: 'select',
                         options: Object.keys(ParticleFunctions.registry),
                         default: 'circle'
-                    }
+                    },
+                    tickSyncRendering: { type: 'boolean', default: false }
                 }
             },
 
@@ -2192,7 +2193,7 @@
 
             STATE.stats.physicsTime = performance.now() - physicsStart;
 
-            if (STATE.particles.activeCount < STATE.particles.count) {
+            if (STATE.particles.activeCount < STATE.particles.count && !STATE.config.behavior.tickSyncRendering) {
                 const mode = STATE.config.behavior.extraParticleMode;
                 const points = [];
                 const remainingPoints = STATE.particles.count - STATE.particles.activeCount;
@@ -2293,6 +2294,9 @@
                 this.msLeft = this.endTime - (+new Date);
                 const secondsLeft = Math.floor(this.msLeft / 1000);
 
+                const secondsChanged = (this.previousSecondsLeft === undefined ||
+                    secondsLeft !== this.previousSecondsLeft);
+
                 if (secondsLeft <= 10 && secondsLeft >= 1) {
                     document.getElementById('tickSound').play();
                 }
@@ -2306,16 +2310,26 @@
                     this.text = `${mins}:${twoDigits(time.getUTCSeconds())}`;
                     const delay = this.isFirstTick ? 1400 : 1000;
                     this.isFirstTick = false;
-
+                    clearTimeout(this.timeoutId);
                     this.timeoutId = setTimeout(() => this.update(), delay);
                 }
 
                 const { realPointsLength, points } = getTextPoints(this.text, true);
                 STATE.particles.activeCount = realPointsLength;
 
-                for (let i = 0; i < STATE.particles.count; i++) {
-                    STATE.particles.arrays.setPoints[i * 2] = points[i].x;
-                    STATE.particles.arrays.setPoints[i * 2 + 1] = points[i].y;
+                if (secondsChanged || this.isFirstTick) {
+                    this.lastPositionUpdate = performance.now();
+
+                    for (let i = 0; i < STATE.particles.count; i++) {
+                        STATE.particles.arrays.setPoints[i * 2] = points[i].x;
+                        STATE.particles.arrays.setPoints[i * 2 + 1] = points[i].y;
+                    }
+                }
+                else if (!STATE.config.behavior.tickSyncRendering) {
+                    for (let i = realPointsLength; i < STATE.particles.count; i++) {
+                        STATE.particles.arrays.setPoints[i * 2] = points[i].x;
+                        STATE.particles.arrays.setPoints[i * 2 + 1] = points[i].y;
+                    }
                 }
             },
 
@@ -2324,9 +2338,6 @@
                 this.startTime = (+new Date);
                 this.isFirstTick = true;
                 this.paused = false;
-                if (this.timeoutId) {
-                    clearTimeout(this.timeoutId);
-                }
                 this.update();
             },
 
