@@ -48,6 +48,44 @@
         button:hover {
             background: #555;
         }
+
+        #pauseButton {
+            transition: transform 0.3s ease !important;
+            display: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #pauseButton:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .pause-line {
+            border-radius: 2px;
+        }
+
+        #pauseButton.play .pause-line.left {
+            transform: translate(35%, 0) rotate(-45deg) scaleY(1.2);
+        }
+
+        #pauseButton.play .pause-line.right {
+            transform: translate(35%, 0) rotate(45deg) scaleY(1.2);
+        }
+
+        #pauseButton.pause .pause-line.left {
+            transform: none;
+        }
+
+        #pauseButton.pause .pause-line.right {
+            transform: none;
+        }
+
+        #pauseButton.play {
+            transform: rotate(-90deg);
+        }
+
+        #pauseButton:active {
+            transform: scale(0.9);
+        }
     </style>
 </head>
 
@@ -60,8 +98,15 @@
     </div>
     <canvas id="glCanvas"></canvas>
     <div id="pauseButton"
-        style="position: fixed; top: 20px; right: 20px; z-index: 1000; cursor: pointer; background-color: rgba(0,0,0,0.5); color: white; padding: 10px 20px; border-radius: 5px; font-family: Arial; display: none;">
-        Pause
+        style="position: fixed; top: 20px; right: 20px; z-index: 1000; cursor: pointer; background-color: rgba(0,0,0,0.5); width: 50px; height: 50px; border-radius: 50%; display: none; justify-content: center; align-items: center; transition: background-color 0.3s;">
+        <div id="pauseIcon" style="width: 50%; height: 50%; position: relative;">
+            <div class="pause-line left"
+                style="position: absolute; width: 30%; height: 100%; background-color: white; left: 0; transition: all 0.3s;">
+            </div>
+            <div class="pause-line right"
+                style="position: absolute; width: 30%; height: 100%; background-color: white; right: 0; transition: all 0.3s;">
+            </div>
+        </div>
     </div>
     <audio id="tickSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568.wav"></audio>
     <audio id="timerComplete" src="https://assets.mixkit.co/active_storage/sfx/2865/2865.wav"></audio>
@@ -2165,7 +2210,8 @@
                 // Resume timer
                 TIMER.resume();
                 STATE.timer.paused = false;
-                pauseButton.textContent = 'Pause';
+                pauseButton.classList.remove('play');
+                pauseButton.classList.add('pause');
 
                 // Resume animation
                 STATE.timer.lastTime = performance.now() * 0.001;
@@ -2174,7 +2220,8 @@
                 // Pause timer
                 TIMER.pause();
                 STATE.timer.paused = true;
-                pauseButton.textContent = 'Resume';
+                pauseButton.classList.remove('pause');
+                pauseButton.classList.add('play');
             }
         }
 
@@ -2376,9 +2423,17 @@
             initializeWithConfig(getConfigFromInputs(), minutes, 0);
             TIMER.start(minutes, 0);
 
+            STATE.timer.paused = false;
+            TIMER.paused = false;
+
+            // Update button appearance
+            const pauseButton = document.getElementById('pauseButton');
+            pauseButton.classList.remove('play');
+            pauseButton.classList.add('pause');
+            pauseButton.style.display = 'flex'; // Use flex to center the icon
+
             STATE.menu.visible = false;
             document.getElementById('menu').style.display = 'none';
-            document.getElementById('pauseButton').style.display = 'block';
             STATE.timer.running = true;
             requestAnimationFrame(draw);
         }
@@ -2568,14 +2623,20 @@
                 const minutes = parseInt(document.getElementById('minutes').value);
                 const seconds = parseInt(document.getElementById('seconds').value);
 
-                STATE.timer.paused = false;
-                TIMER.paused = false;
-                document.getElementById('pauseButton').textContent = 'Pause';
-
                 initializeWithConfig(getConfigFromInputs(), minutes, seconds);
                 TIMER.start(minutes, seconds);
+
+                // Reset pause state
+                STATE.timer.paused = false;
+                TIMER.paused = false;
+
+                // Update button appearance
+                const pauseButton = document.getElementById('pauseButton');
+                pauseButton.classList.remove('play');
+                pauseButton.classList.add('pause');
+                pauseButton.style.display = 'flex';
+
                 document.getElementById('menu').style.display = 'none';
-                document.getElementById('pauseButton').style.display = 'block';
                 STATE.timer.running = true;
                 STATE.menu.visible = false;
                 requestAnimationFrame(draw);
