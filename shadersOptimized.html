@@ -1737,12 +1737,20 @@
 
                 // Navigate to the correct nested object
                 for (let i = 0; i < path.length - 1; i++) {
+                    if (!target[path[i]]) {
+                        console.warn(`Path segment ${path[i]} not found in config object`);
+                        return;
+                    }
                     target = target[path[i]];
                 }
 
                 const key = path[path.length - 1];
+                if (!target.hasOwnProperty(key)) {
+                    console.warn(`Key ${key} not found in config object at path ${path.slice(0, -1).join('.')}`);
+                    return;
+                }
+
                 if (key === 'colors') {
-                    // Handle color array specially
                     target[key] = Array.from(document.querySelectorAll('.particleColor')).map(cp => {
                         const hex = cp.value;
                         return [
@@ -1751,6 +1759,8 @@
                             parseInt(hex.slice(5, 7), 16) / 255
                         ];
                     });
+                } else if (input.type === 'checkbox') {
+                    target[key] = input.checked;
                 } else if (input.type === 'number') {
                     target[key] = parseFloat(input.value);
                 } else {
@@ -2200,7 +2210,6 @@
 
                 ParticleFunctions.applyToPoints(mode, points, remainingPoints);
 
-                // Update the setPoints for all extra particles
                 for (let i = STATE.particles.activeCount; i < STATE.particles.count; i++) {
                     const arrayIndex = i * 2;
                     const pointIndex = i - STATE.particles.activeCount;
@@ -2321,12 +2330,6 @@
                     this.lastPositionUpdate = performance.now();
 
                     for (let i = 0; i < STATE.particles.count; i++) {
-                        STATE.particles.arrays.setPoints[i * 2] = points[i].x;
-                        STATE.particles.arrays.setPoints[i * 2 + 1] = points[i].y;
-                    }
-                }
-                else if (!STATE.config.behavior.tickSyncRendering) {
-                    for (let i = realPointsLength; i < STATE.particles.count; i++) {
                         STATE.particles.arrays.setPoints[i * 2] = points[i].x;
                         STATE.particles.arrays.setPoints[i * 2 + 1] = points[i].y;
                     }
